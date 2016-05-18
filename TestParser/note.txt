@@ -1,0 +1,1 @@
+Parses results for multiple histories from single generator run. 
