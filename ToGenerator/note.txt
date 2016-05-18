@@ -1,0 +1,1 @@
+ToGenrator generates inputs for history generator
