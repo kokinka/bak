@@ -10,12 +10,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -26,6 +24,9 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -51,6 +52,7 @@ class Settings {
     public static int line_gap = 8;
     public static int line_size = 2;
     public static int node_gap = 20;
+    public static int chromosome_gap = 15;
     public static double scale_x;
     public static double saturation = 0.99;
     public static double brightness = 0.75;
@@ -63,7 +65,7 @@ class Settings {
     static public boolean default_highlighted =true;
     /*private*/ static TreeMap<Integer, GeneMeta> gene_meta = new TreeMap<Integer, GeneMeta>();
     static Paint nonhighlighted = Color.LIGHTGRAY;
-    
+
     private static List<Integer> genes;
 
     public static void loadXML(String file_name) {
@@ -92,7 +94,7 @@ class Settings {
             root.appendChild(genes);
         }
 
-        
+
         try {
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
@@ -105,7 +107,7 @@ class Settings {
             Logger.getLogger(Settings.class.getName()).log(Level.SEVERE, null, ex);
         } catch (TransformerException ex) {
             Logger.getLogger(Settings.class.getName()).log(Level.SEVERE, null, ex);
-        } 
+        }
     }
     public static void exportXML() {
     exportXML(new File(Settings.title + ".xml"));
@@ -144,6 +146,11 @@ class Settings {
         node_gap.appendChild(node_gap_text);
         settings.appendChild(node_gap);
 
+        Element chromosome_gap = dom.createElement("ChromosomeGap");
+        Text chromosome_gap_text = dom.createTextNode("" + Settings.chromosome_gap);
+        chromosome_gap.appendChild(chromosome_gap_text);
+        settings.appendChild(chromosome_gap);
+
         Element saturation = dom.createElement("Saturation");
         Text saturation_text = dom.createTextNode("" + Settings.saturation);
         saturation.appendChild(saturation_text);
@@ -158,32 +165,32 @@ class Settings {
         Text title_text = dom.createTextNode("" + Settings.title);
         title.appendChild(title_text);
         settings.appendChild(title);
-        
+
         Element optimized = dom.createElement("Optimized");
         Text text_optimized = dom.createTextNode("" + Settings.optimized);
         optimized.appendChild(text_optimized);
         settings.appendChild(optimized);
-        
+
         Element highlighted = dom.createElement("Highlighted");
         Text text_highlighted = dom.createTextNode(""+default_highlighted);
         highlighted.appendChild(text_highlighted);
         settings.appendChild(highlighted);
-        
+
         Element transparent = dom.createElement("Transparent");
         Text text_transparent = dom.createTextNode(""+default_transparent);
         transparent.appendChild(text_transparent);
         settings.appendChild(transparent);
-        
+
         Element draw = dom.createElement("Draw");
         Text text_draw = dom.createTextNode(""+default_draw);
         draw.appendChild(text_draw);
         settings.appendChild(draw);
-        
+
         Element non_highlighted = dom.createElement("Nonhighlighted");
         Text text_nonhighlighted = dom.createTextNode(""+Settings.nonhighlighted);
         non_highlighted.appendChild(text_nonhighlighted);
         settings.appendChild(non_highlighted);
-        
+
         return settings;
     }
 
@@ -210,6 +217,9 @@ class Settings {
                 case "NodeGap":
                     Settings.node_gap = Integer.parseInt(process.getTextContent());
                     break;
+                case "ChromosomeGap":
+                    Settings.chromosome_gap = Integer.parseInt(process.getTextContent());
+                    break;
                 case "Saturation":
                     Settings.saturation = Double.parseDouble(process.getTextContent());
                     break;
@@ -227,7 +237,7 @@ class Settings {
                     break;
                 case "Transparent":
                      Settings.default_transparent = Boolean.parseBoolean(process.getTextContent());
-                    break ;  
+                    break ;
                 case "Draw":
                         Settings.default_draw = Boolean.parseBoolean(process.getTextContent());
                     break;
@@ -299,9 +309,9 @@ class Settings {
             //     this.gene_col[i] = Color.DARKGREY;
             //}
             //this.gene_col[i] = Color.hsb((i - 1) * hue, Settings.saturation, Settings.brightness);
-        }        
+        }
     }
-    
+
     static boolean is_draw(int a) {
         a = Math.abs(a);
         if(Settings.gene_meta.containsKey(a)){
@@ -309,7 +319,7 @@ class Settings {
         }else{
             return default_draw;
         }
-        
+
     }
 
     static int gene_width(int a) {
@@ -319,7 +329,7 @@ class Settings {
             to_return = Settings.gene_meta.get(a).getLine_width();
             if(to_return == null){
                 return Settings.line_size;
-            } 
+            }
             return to_return;
         }else{
             return Settings.line_size ;
@@ -407,7 +417,7 @@ class Settings {
        m.setHighlighted(value);
        Settings.gene_meta.put(a, m);
     }
-    
+
 
     static Paint gene_color(int gene) {
         gene = Math.abs(gene);
@@ -420,7 +430,7 @@ class Settings {
                 p = gene_col[genes.indexOf(gene)];
             }
         }else{
-           p = gene_col[genes.indexOf(gene)]; 
+           p = gene_col[genes.indexOf(gene)];
         }
         }else{
             p = Settings.nonhighlighted;

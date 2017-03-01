@@ -11,8 +11,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javafx.application.Application;
-import static javafx.application.Application.launch;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -32,7 +32,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import static javafx.application.Application.launch;
 
 public class EHDraw extends Application {
 
@@ -64,7 +63,7 @@ public class EHDraw extends Application {
     @Override
     public void start(Stage _primaryStage) throws FileNotFoundException, IOException {
         primaryStage = _primaryStage;
-       
+
 
             VBox controlsVBox = new VBox(10);
             VBox globalsVBox = new VBox();
@@ -100,7 +99,7 @@ public class EHDraw extends Application {
             exportSettingsButton.setOnAction(new exportSettingsButtonHandler());
             exportILPButton.setOnAction(new exportILPButtonHandler());
             importILPButton.setOnAction(new importILPButtonHandler());
-            
+
 
             ObservableList<javafx.scene.Node> controls = controlsVBox.getChildren();
             controls.add(openButton);
@@ -162,16 +161,28 @@ public class EHDraw extends Application {
                     }
                 }
             });
-            
+
             Label nodeGapL = new Label("Node Gap");
             final TextField nodeGapF = new TextField(Integer.toString(Settings.node_gap));
             HBox nodeGapH = new HBox(10);
             nodeGapH.getChildren().addAll(nodeGapL,nodeGapF);
-            
+
             nodeGapF.setOnAction(new EventHandler() {
             @Override
             public void handle(Event event) {
                 Settings.node_gap = Integer.parseInt(nodeGapF.getText());
+                updated();
+            }
+        });
+            Label chromosomeGapL = new Label("Chromosome Gap");
+            final TextField chromosomeGapF = new TextField(Integer.toString(Settings.chromosome_gap));
+            HBox chromosomeGapH = new HBox(10);
+            chromosomeGapH.getChildren().addAll(chromosomeGapL,chromosomeGapF);
+
+            chromosomeGapF.setOnAction(new EventHandler() {
+            @Override
+            public void handle(Event event) {
+                Settings.chromosome_gap = Integer.parseInt(chromosomeGapF.getText());
                 updated();
             }
         });
@@ -239,7 +250,7 @@ public class EHDraw extends Application {
                     }
                 }
             });
-            
+
             Label optL = new Label("Optimization");
             final TextField optF = new TextField(Integer.toString(Settings.optimized));
             HBox optH = new HBox(10);
@@ -252,9 +263,9 @@ public class EHDraw extends Application {
                 strom.optimize();
                 updated();
             }
-            
+
             });
-            
+
             Label nonhighlightedL = new Label("Non highlighted");
             ColorPicker nonhighlightedP = new ColorPicker((Color) Settings.nonhighlighted);
             HBox nonhighlightedH = new HBox(10);
@@ -266,7 +277,7 @@ public class EHDraw extends Application {
                 updated();
             }
         });
-                    
+
             final ToggleButton redraw = new ToggleButton("Redraw");
             redraw.setSelected(Settings.redraw);
             redraw.setOnAction(new EventHandler() {
@@ -276,51 +287,51 @@ public class EHDraw extends Application {
                     Settings.redraw = redraw.isSelected();
                 }
             });
-            
-            
+
+
             pickGene = new ComboBox();
-            
-            
+
+
             Label drawL = new Label("Draw");
              drawC = new ComboBox();
             HBox drawH = new HBox(10);
             drawH.getChildren().addAll(drawL,drawC);
-            
-            
+
+
             Label highlightedL = new Label("Highlighted");
              highlightedC = new ComboBox();
             HBox highlightedB = new HBox(10);
             highlightedB.getChildren().addAll(highlightedL,highlightedC);
-            
-            
+
+
             Label transparentL = new Label("Transparent");
              transparentC = new ComboBox();
             HBox transparentH = new HBox(10);
             transparentH.getChildren().addAll(transparentL,transparentC);
-            
-            
+
+
             Label lineWL = new Label("Line Width");
             lineWF = new TextField(Integer.toString(Settings.line_size));
             HBox lineWH = new HBox(10);
             lineWH.getChildren().addAll(lineWL,lineWF);
-            
-            
+
+
             Label nameL = new Label("Name");
              nameF = new TextField();
             HBox nameH = new HBox(10);
             nameH.getChildren().addAll(nameL,nameF);
-            
-            
+
+
             Label colourL = new Label("Colour");
              colorP = new ColorPicker();
             HBox colorH = new HBox(10);
             colorH.getChildren().addAll(colourL,colorP);
-            
-            
+
+
             removeMeta = new Button("Delete gene meta");
-            
+
             useDefault = new Button("Delete all meta");
-          
+
             HBox metaButtonsH = new HBox(10);
             metaButtonsH.getChildren().addAll(removeMeta,useDefault);
                       useDefault.setOnAction(new EventHandler() {
@@ -339,12 +350,12 @@ public class EHDraw extends Application {
                updatedgene(gene);
                updated();
             }
-        });            
+        });
                         metaclear();
                         attach_listeners();
-            globalsVBox.getChildren().addAll(timeDiffH, widthH, heightH, nodeGapH, lineGapH, lineSizeH, satH, briH,optH, nonhighlightedH, redraw, pickGene, drawH, transparentH, highlightedB, lineWH, nameH, colorH, metaButtonsH);
+            globalsVBox.getChildren().addAll(timeDiffH, widthH, heightH, nodeGapH, chromosomeGapH, lineGapH, lineSizeH, satH, briH,optH, nonhighlightedH, redraw, pickGene, drawH, transparentH, highlightedB, lineWH, nameH, colorH, metaButtonsH);
 
-        
+
 
     }
     private static void metaclear(){
@@ -372,7 +383,7 @@ public class EHDraw extends Application {
                 updatedgene(gene);
                 updated();
             }
-            
+
             });
           colorP.setOnAction(new EventHandler<ActionEvent>() {
             @Override
@@ -391,7 +402,7 @@ public class EHDraw extends Application {
                 updatedgene(gene);
                 updated();
             }
-            
+
             });
           transparentC.setOnAction(new EventHandler() {
             @Override
@@ -403,7 +414,7 @@ public class EHDraw extends Application {
                    int gene = (int)pickGene.getValue();
                    Settings.set_gene_trans(gene,val);
                    updatedgene(gene);
-                   
+
                }
                updated();
             }
@@ -417,7 +428,7 @@ public class EHDraw extends Application {
                }else{
                    int gene = (int)pickGene.getValue();
                    Settings.set_gene_highlighted(gene,val);
-                   updatedgene(gene);                   
+                   updatedgene(gene);
                }
                updated();
             }
@@ -432,7 +443,7 @@ public class EHDraw extends Application {
                    int gene = (int)pickGene.getValue();
                    Settings.set_gene_draw(gene, val);
                    updatedgene(gene);
-                   
+
                }
                updated();
             }
@@ -441,7 +452,7 @@ public class EHDraw extends Application {
             @Override
             public void handle(Event event) {
                 update_specific_panel();
-                
+
             }
         });
     }
@@ -454,7 +465,7 @@ public class EHDraw extends Application {
               lineWF.setDisable(true);
               transparentC.setDisable(true);
               highlightedC.setDisable(true);
-              drawC.setDisable(true);   
+              drawC.setDisable(true);
                 }else{ if(pickGene.getValue()=="Default"){
                 colorP.setDisable(true);
                 nameF.setDisable(true);
@@ -462,7 +473,7 @@ public class EHDraw extends Application {
                 transparentC.setDisable(false);
                 highlightedC.setDisable(false);
                 drawC.setDisable(false);
-                
+
                 transparentC.getItems().clear();
                 transparentC.getItems().add("True");
                 transparentC.getItems().add("False");
@@ -477,7 +488,7 @@ public class EHDraw extends Application {
                 if(Settings.default_highlighted){
                     highlightedC.setValue("True");
                 }
-                
+
                 drawC.getItems().clear();
                 drawC.getItems().add("True");
                 drawC.getItems().add("False");
@@ -485,7 +496,7 @@ public class EHDraw extends Application {
                 if(Settings.default_draw){
                     drawC.setValue("True");
                 }
-                
+
                 }else{
                     int gene = Integer.parseInt(pickGene.getValue().toString());
                     updatedgene(gene);
@@ -500,7 +511,7 @@ public class EHDraw extends Application {
           highlightedC.setOnAction(null);
           drawC.setOnAction(null);
           pickGene.setOnAction(null);
-           
+
     }
     private static void updatedgene(int gene){
         dettach_listeners();
@@ -511,18 +522,18 @@ public class EHDraw extends Application {
                     transparentC.setDisable(false);
                     highlightedC.setDisable(false);
                     drawC.setDisable(false);
-                    
+
                 transparentC.getItems().clear();
                 transparentC.getItems().add("True");
                 transparentC.getItems().add("False");
-                
-                
+
+
                 highlightedC.getItems().clear();
                 highlightedC.getItems().add("True");
                 highlightedC.getItems().add("False");
-                
 
-                
+
+
                 drawC.getItems().clear();
                 drawC.getItems().add("True");
                 drawC.getItems().add("False");
@@ -541,7 +552,7 @@ public class EHDraw extends Application {
                     if(Settings.is_draw(gene)){
                     drawC.setValue("True");
                     }else{
-                    drawC.setValue("False");   
+                    drawC.setValue("False");
                     }
                     if(Settings.isHighlighted(gene)){
                     highlightedC.setValue("True");
@@ -561,7 +572,7 @@ public class EHDraw extends Application {
                     if(lw != null){
                     lineWF.setText(lw.toString());
                     }
-                    
+
                 }
                 colorP.setValue((Color) Settings.gene_color(gene));
                 attach_listeners();
@@ -642,7 +653,7 @@ public class EHDraw extends Application {
                 Settings.loadXML(load_settings);
             }
             if(load_lp!=null){
-                File lp= new File(load_lp);                    
+                File lp= new File(load_lp);
                 strom.loadILP(lp);
             }
             if (draw_svg) {
@@ -699,7 +710,7 @@ public class EHDraw extends Application {
 
         }
 
-       
+
     }
 
     private static class SaveImgButtonHandler implements EventHandler<ActionEvent> {
@@ -783,7 +794,7 @@ public class EHDraw extends Application {
     private static class OptimizeButtonHandler implements EventHandler<ActionEvent> {
 
         public OptimizeButtonHandler() {
-        
+
         }
 
         @Override
@@ -794,9 +805,9 @@ public class EHDraw extends Application {
     }
 
     private static class exportILPButtonHandler implements EventHandler<ActionEvent> {
-            
+
         public exportILPButtonHandler() {
-            
+
         }
 
         @Override
