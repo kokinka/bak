@@ -90,6 +90,7 @@ public class EHDraw extends Application {
             Button importSettingsButton = new Button("Import Settings");
             Button exportSettingsButton = new Button("Export Settings");
             Button redrawButton = new Button("Redraw");
+            Button crossingsButton = new Button("Minimize crossings");
 
             openButton.setOnAction(new OpenButtonHandler(primaryStage));
             optimizeButton.setOnAction(new OptimizeButtonHandler());
@@ -99,6 +100,7 @@ public class EHDraw extends Application {
             exportSettingsButton.setOnAction(new exportSettingsButtonHandler());
             exportILPButton.setOnAction(new exportILPButtonHandler());
             importILPButton.setOnAction(new importILPButtonHandler());
+            crossingsButton.setOnAction(new CrossingsButtonHandler());
 
 
             ObservableList<javafx.scene.Node> controls = controlsVBox.getChildren();
@@ -110,6 +112,7 @@ public class EHDraw extends Application {
             controls.add(exportILPButton);
             controls.add(importILPButton);
             controls.add(redrawButton);
+            controls.add(crossingsButton);
 
             Label timeDiffL = new Label("Time diff");
             final TextField timeDiffF = new TextField(Double.toString(Settings.time_diff));
@@ -857,6 +860,21 @@ public class EHDraw extends Application {
             }
             updated();
         }
+    }
+
+    private static class CrossingsButtonHandler implements EventHandler<ActionEvent> {
+
+        public CrossingsButtonHandler() {
+
+        }
+
+        @Override
+        public void handle(ActionEvent event) {
+            //TODO nejake tie meta veci a logger asi
+            strom.level_by_level_sweep();
+            draw();
+        }
+
     }
 
 }
