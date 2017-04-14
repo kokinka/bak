@@ -38,6 +38,7 @@ class EvolutionTree {
     private boolean optimized;
     private TreeSet<Integer> solution;
     private Set<Integer> genes;
+    private HeuristicStrategy strategy;
 
     public EvolutionTree() {
         this.root = null;
@@ -50,6 +51,8 @@ class EvolutionTree {
         this.optimized = false;
         this.solution = new TreeSet<Integer>();
         this.genes = new HashSet<Integer>();
+        //TODO to tu nebude
+        this.strategy = new BarycenterStrategy();
     }
 
     public EvolutionNode getRoot() {
@@ -128,7 +131,7 @@ class EvolutionTree {
         private EvolutionNode second;
         private String event;
         private double time;
-        private ArrayList<Chromosome> chromosomes;
+        ArrayList<Chromosome> chromosomes;
         private ArrayList<Integer> allGenes;
         private ArrayList<Integer> genePos;
         private ArrayList<Integer> gene_x_pos;
@@ -557,6 +560,36 @@ class EvolutionTree {
      }
 
      }  */
+
+    public void exportCrossings(BufferedWriter bw) throws IOException {
+        exportCrossingsNode(bw, this.getRoot());
+        bw.close();
+    }
+
+    public void exportCrossingsNode(BufferedWriter bw, EvolutionNode node) throws IOException {
+        String line = "";
+        line += node.name + " " + node.id + " ";
+        if(node.ancestor == null) line += "root ";
+        else line += node.ancestor.id + " ";
+        line += node.time + " " + node.event + " ";
+        for(Chromosome ch : node.chromosomes){
+            for (Integer gene: ch.genes){
+                line += gene + " ";
+            }
+            if(ch.isCircular) line += "@ ";
+            else line += "$ ";
+
+        }
+        line += "# ";
+        for (Integer pos: node.genePos){
+                line += pos + " ";
+        }
+        bw.write(line);
+        bw.newLine();
+        if(node.getFirst() != null) exportCrossingsNode(bw, node.getFirst());
+        if(node.getSecond()!= null) exportCrossingsNode(bw, node.getSecond());
+    }
+
     private void rekBlok(EvolutionNode node) {
         if (node.ancestorNum > 0) {
             //TODO asi tam nebudu vsade allGenes, ale bude to nejako rozdelene na chromozomy
@@ -810,11 +843,15 @@ class EvolutionTree {
         node1.genePos = newGenePos;
     }
 
-    //node1 je stabilny, node2 premiesavame
-    void heuristic(EvolutionNode node1, EvolutionNode node2, boolean isBackwards){
+    //nodeSet je stabilny, node2 premiesavame
+    private void oneSidedOpt(Set<EvolutionNode> stableNodeSet, EvolutionNode unstableNode, boolean isBackwards){
+        //TODO prerobit aby to fungovalo aj pre dva nody
+        EvolutionNode node1 = (EvolutionNode) stableNodeSet.toArray()[0];
+
+        //TODO mozno len udrziavat pre kazdy chromozom zoznam chromozomov, s ktorymi je spojeny, asi by mali mat ID
         //connection je zoznam susedov (id chromozomov node1) pre kazdy chromozom node2
         ArrayList<TreeSet<Integer>> connection = new ArrayList<>();
-        for (int i = 0; i < node2.chromosomes.size(); i++) {
+        for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
             connection.add(new TreeSet<>());
         }
         // toto pole hovori ktoremu chromozomu patri pozicia z genPos v node po node2
@@ -823,124 +860,106 @@ class EvolutionTree {
         // v tejto casti vytvaram arraylist connection a pole relativeCh pre oba pripady - dopredu a dozadu
         int ch_number = 0;
         if(!isBackwards) {
-            int counter = node2.chromosomes.get(0).genes.size();
-            for (int i = 0; i < node2.genePos.size(); i++) {
+            int counter = unstableNode.chromosomes.get(0).genes.size();
+            for (int i = 0; i < unstableNode.genePos.size(); i++) {
                 if (i == counter) {
                     ch_number++;
-                    counter += node2.chromosomes.get(ch_number).genes.size();
+                    counter += unstableNode.chromosomes.get(ch_number).genes.size();
                 }
-                if (node2.genePos.get(i) == -1) continue;
-                connection.get(ch_number).add(which_chromosome(node1, node2.genePos.get(i)));
+                if (unstableNode.genePos.get(i) == -1) continue;
+                connection.get(ch_number).add(which_chromosome(node1, unstableNode.genePos.get(i)));
             }
-            if(node2.getFirst() != null) {
-                counter = node2.chromosomes.get(0).genes.size();
+            if(unstableNode.getFirst() != null) {
+                counter = unstableNode.chromosomes.get(0).genes.size();
                 ch_number = 0;
-                for (int i = 0; i < node2.getFirst().genePos.size(); i++) {
+                for (int i = 0; i < unstableNode.getFirst().genePos.size(); i++) {
                     if (i == counter) {
                         ch_number++;
-                        counter += node2.chromosomes.get(ch_number).genes.size();
+                        counter += unstableNode.chromosomes.get(ch_number).genes.size();
                     }
-                    if (node2.getFirst().genePos.get(i) == -1) {
+                    if (unstableNode.getFirst().genePos.get(i) == -1) {
                         relativeChromosomesPos.add(-1);
                         continue;
                     }
-                    relativeChromosomesPos.add(which_chromosome(node2, node2.getFirst().genePos.get(i)));
+                    relativeChromosomesPos.add(which_chromosome(unstableNode, unstableNode.getFirst().genePos.get(i)));
                 }
             }
         } else {
-            int counter = node1.chromosomes.get(0).genes.size();
-            for (int i = 0; i < node1.genePos.size(); i++) {
-                if (i == counter) {
-                    ch_number++;
-                    counter += node1.chromosomes.get(ch_number).genes.size();
+            if (stableNodeSet.size() == 1) {
+                int counter = node1.chromosomes.get(0).genes.size();
+                for (int i = 0; i < node1.genePos.size(); i++) {
+                    if (i == counter) {
+                        ch_number++;
+                        counter += node1.chromosomes.get(ch_number).genes.size();
+                    }
+                    if (node1.genePos.get(i) == -1) {
+                        relativeChromosomesPos.add(-1);
+                        continue;
+                    }
+                    int which_ch = which_chromosome(unstableNode, node1.genePos.get(i));
+                    connection.get(which_ch).add(ch_number);
+                    relativeChromosomesPos.add(which_ch);
                 }
-                if (node1.genePos.get(i) == -1){
-                    relativeChromosomesPos.add(-1);
-                    continue;
-                }
-                int which_ch = which_chromosome(node2, node1.genePos.get(i));
-                connection.get(which_ch).add(ch_number);
-                relativeChromosomesPos.add(which_ch);
             }
         }
 
-        //pocitanie score pre chromozomy v node2
-        for (int i = 0; i < node2.chromosomes.size(); i++) {
-            for(Integer j : connection.get(i)){
-                node2.chromosomes.get(i).score += (j+1)*Settings.chromosome_gap;
-            }
-            node2.chromosomes.get(i).score /= connection.get(i).size();
-        }
-
-        //pre kazdy chromozom v node2 si zapamatam ich aktualne poradie
-        for (int i = 0; i < node2.chromosomes.size(); i++) {
-            node2.chromosomes.get(i).relativeOrderID = i;
-        }
-
-        //sortovanie chromozomov v node2
-        (node2.chromosomes).sort((o1, o2) -> {
-            if(o1.score > o2.score) return 1;
-            if(o1.score < o2.score) return -1;
-            return 0;
-            //TODO ak su rovnake tak sa tam nieco ine uplatni/iny skorovaci system
-        });
+        strategy.heuristic(unstableNode, connection);
 
         // najdenie noveho genePos pre nasledovnika node2
         // ak ideme dopredu tak pre nasledujuci node, ak dozadu tak pre node1
-        if(!isBackwards && node2.getFirst()!=null){
-            if(node2.getSecond() == null) {
-                changeGenePos(node2.getFirst(), node2, relativeChromosomesPos);
+        if(!isBackwards && unstableNode.getFirst()!=null){
+            if(unstableNode.getSecond() == null) {
+                changeGenePos(unstableNode.getFirst(), unstableNode, relativeChromosomesPos);
             } else {
-                changeGenePos(node2.getFirst(), node2, relativeChromosomesPos);
-                changeGenePos(node2.getSecond(), node2, relativeChromosomesPos);
+                changeGenePos(unstableNode.getFirst(), unstableNode, relativeChromosomesPos);
+                changeGenePos(unstableNode.getSecond(), unstableNode, relativeChromosomesPos);
             }
         } else if(isBackwards) {
-            changeGenePos(node1, node2, relativeChromosomesPos);
+            changeGenePos(node1, unstableNode, relativeChromosomesPos);
         }
 
         // uz len oprava arraylistov allGenes a genePos + vynulovanie skore pre node2
         ArrayList<Integer> newAllGenes = new ArrayList<>();
         ArrayList<Integer> newGenePos = new ArrayList<>();
-        for(Chromosome ch: node2.chromosomes){
+        for(Chromosome ch: unstableNode.chromosomes){
             newAllGenes.addAll(ch.genes);
             newGenePos.addAll(ch.genePos);
             ch.score = 0;
         }
-        node2.allGenes = newAllGenes;
-        node2.genePos = newGenePos;
+        unstableNode.allGenes = newAllGenes;
+        unstableNode.genePos = newGenePos;
 
     }
 
     // toto sa stane ked sa klikne na tlacidlo Minimize Crossings
     // zatial ide algoritmus len raz tam a naspat
     void level_by_level_sweep(){
+        //TODO asi tu bude nieco na ratanie crossingov a bude to robit dovtedy
         if(this.getRoot() == null) return;
-        there_and_back(this.getRoot(), false);
+        optimalizuj(this.getRoot());
     }
 
-    // TODO asi bude ta rekurzia inak
-    // prejde od korena ku prvemu listu a naspat ku korenu, potom do druhej vetvy a naspat
-    void there_and_back(EvolutionNode node, boolean isBackwards) {
-        if (!isBackwards) {
-            if (node.getFirst() == null) {
-                there_and_back(node, true);
-                return;
-            }
-            if (node.getSecond() == null) {
-                heuristic(node, node.getFirst(), false);
-                there_and_back(node.getFirst(), false);
-            } else {
-                heuristic(node, node.getFirst(), false);
-                there_and_back(node.getFirst(), false);
-                heuristic(node, node.getSecond(), false);
-                there_and_back(node.getSecond(), false);
-            }
-        } else {
-           if(node.ancestor == null) return;
-           if(node.ancestor.getSecond() == null) {
-               heuristic(node, node.ancestor, true);
-               there_and_back(node.ancestor, true);
-           } else there_and_back(node.ancestor, true);
+
+    private void optimalizuj(EvolutionNode node) {
+        if (node.ancestor != null) {
+            Set<EvolutionNode> set = new HashSet<>();
+            set.add(node.ancestor);
+            oneSidedOpt(set, node, false);
         }
+
+        if (node.getFirst() != null) {
+            Set<EvolutionNode> set = new HashSet<>();
+            set.add(node.getFirst());
+            optimalizuj(node.getFirst());
+            if (node.getSecond() != null) {
+                set.add(node.getSecond());
+                optimalizuj(node.getSecond());
+            }
+            oneSidedOpt(set, node, true);
+        }
+    }
+
+    public void setStrategy(HeuristicStrategy strategy){
+        this.strategy = strategy;
     }
 }

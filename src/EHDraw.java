@@ -42,11 +42,13 @@ public class EHDraw extends Application {
     static boolean optimize = false; // -opt
     static boolean export_greedy = false; //-exportgreedy
     static boolean export_ilp = false; //-exportilp
+    static boolean export_crossings = false;
     static boolean draw_svg = false; // -drawsvg
     static String input; //-input:input.history
     static String svg_output = "output.svg";
     static String ilp_output = "output.lp";
     static String greedy_output = "output.greedy";
+    static String crossings_output = "output.crossings";
     static String load_settings = null; //-settings:filename
     static String load_lp = null;
     static ComboBox pickGene ;
@@ -91,6 +93,7 @@ public class EHDraw extends Application {
             Button exportSettingsButton = new Button("Export Settings");
             Button redrawButton = new Button("Redraw");
             Button crossingsButton = new Button("Minimize crossings");
+            Button exportNewHistoryButton = new Button("Export new history");
 
             openButton.setOnAction(new OpenButtonHandler(primaryStage));
             optimizeButton.setOnAction(new OptimizeButtonHandler());
@@ -101,6 +104,7 @@ public class EHDraw extends Application {
             exportILPButton.setOnAction(new exportILPButtonHandler());
             importILPButton.setOnAction(new importILPButtonHandler());
             crossingsButton.setOnAction(new CrossingsButtonHandler());
+            exportNewHistoryButton.setOnAction(new ExportNewHistory());
 
 
             ObservableList<javafx.scene.Node> controls = controlsVBox.getChildren();
@@ -113,6 +117,7 @@ public class EHDraw extends Application {
             controls.add(importILPButton);
             controls.add(redrawButton);
             controls.add(crossingsButton);
+            controls.add(exportNewHistoryButton);
 
             Label timeDiffL = new Label("Time diff");
             final TextField timeDiffF = new TextField(Double.toString(Settings.time_diff));
@@ -597,6 +602,8 @@ public class EHDraw extends Application {
                 case "-exportilp":
                     export_ilp = true;
                     break;
+                case "-export_crossings":
+                    export_crossings = true;
                 case "-drawsvg":
                     draw_svg = true;
                     break;
@@ -621,6 +628,9 @@ public class EHDraw extends Application {
                     break;
                 case "-load_lp":
                     load_lp = splitted[1];
+                    break;
+                case "-crossings_output":
+                    crossings_output = splitted[1];
                     break;
 
             }
@@ -651,6 +661,17 @@ public class EHDraw extends Application {
                 BufferedWriter bw = new BufferedWriter(fw);
                 strom.exportILP(bw);
                 fw.close();
+            }
+            if(export_crossings){
+                File file = new File(crossings_output);
+                file.delete();
+                file.createNewFile();
+                FileWriter fw = new FileWriter(file.getAbsoluteFile());
+                BufferedWriter bw = new BufferedWriter(fw);
+                strom.level_by_level_sweep();
+                strom.exportCrossings(bw);
+                fw.close();
+
             }
             if(load_settings!=null){
                 Settings.loadXML(load_settings);
@@ -875,6 +896,41 @@ public class EHDraw extends Application {
             draw();
         }
 
+    }
+
+    private static class ExportNewHistory implements EventHandler<ActionEvent> {
+
+        public ExportNewHistory() {
+
+        }
+
+        @Override
+        public void handle(ActionEvent event) {
+            try {
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setTitle("Export new history");
+                FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("HISTORY files (*.history)", "*.history");
+                fileChooser.getExtensionFilters().add(extFilter);
+                File file = fileChooser.showSaveDialog(primaryStage);
+                file.delete();
+                file.createNewFile();
+                FileWriter fw = null;
+                try {
+                    fw = new FileWriter(file);
+                } catch (IOException ex) {
+                    Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                BufferedWriter bw = new BufferedWriter(fw);
+                try {
+                    strom.exportCrossings(bw);
+                    fw.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 
 }
