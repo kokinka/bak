@@ -891,7 +891,6 @@ public class EHDraw extends Application {
 
         @Override
         public void handle(ActionEvent event) {
-            //TODO nejake tie meta veci a logger asi
             strom.level_by_level_sweep();
             draw();
         }
@@ -914,19 +913,10 @@ public class EHDraw extends Application {
                 File file = fileChooser.showSaveDialog(primaryStage);
                 file.delete();
                 file.createNewFile();
-                FileWriter fw = null;
-                try {
-                    fw = new FileWriter(file);
-                } catch (IOException ex) {
-                    Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                FileWriter fw = new FileWriter(file);
                 BufferedWriter bw = new BufferedWriter(fw);
-                try {
-                    strom.exportCrossings(bw);
-                    fw.close();
-                } catch (IOException ex) {
-                    Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                strom.exportCrossings(bw);
+                fw.close();
             } catch (IOException ex) {
                 Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
             }

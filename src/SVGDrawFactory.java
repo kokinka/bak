@@ -1,4 +1,6 @@
 
+import static javafx.scene.paint.Color.BLACK;
+
 import java.awt.BasicStroke;
 import java.awt.Rectangle;
 import java.awt.Stroke;
@@ -72,12 +74,25 @@ class SVGDrawFactory extends DrawFactory {
          }
     }
 
+    @Override public void drawRectangle(double x1, double y1, double x2, double y2, boolean isCircular) {
+        this.setLineColor(BLACK);
+        this.setLineWidth(Settings.line_size);
+        Stroke normal;
+        normal = new BasicStroke((float) this.width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
+        g2d.setStroke(normal);
+        if(!isCircular){
+            g2d.drawRect((int)x1,(int)y1,(int)(x2-x1),(int)(y2-y1));
+        } else {
+            g2d.drawRoundRect((int)x1,(int)y1,(int)(x2-x1),(int)(y2-y1), (int)((x2-x1)/2), (int)((y2-y1)/2));
+        }
+    }
+
     @Override
     public void setLineWidth(double width) {
         this.width = (float) width;
 
     }
-    
+
     public void export() {
         export(new File(Settings.title+".svg"));
     }

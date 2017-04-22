@@ -1,8 +1,9 @@
 
+import static javafx.scene.paint.Color.BLACK;
+import static javafx.scene.paint.Color.WHITE;
+
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import static javafx.scene.paint.Color.WHITE;
-import javafx.scene.shape.Line;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -30,7 +31,7 @@ class FXDrawFactory extends DrawFactory {
     @Override
     public void drawGeneLine(double x1, double y1, double x2, double y2, int gene) {
         if(!Settings.isTransparent(gene)){
-        this.setLineColor((Color) 
+        this.setLineColor((Color)
                 Settings.gene_color(gene));
         this.setLineWidth(Settings.gene_width(gene));
         if (gene < 0) {
@@ -40,7 +41,18 @@ class FXDrawFactory extends DrawFactory {
         }
         gc.strokeLine(x1, y1, x2, y2);
         }
-        
+
+    }
+
+    @Override public void drawRectangle(double x1, double y1, double x2, double y2, boolean isCircular) {
+        this.setLineColor(BLACK);
+        this.setLineWidth(Settings.line_size);
+        gc.setLineDashes(null);
+        if(!isCircular){
+            gc.strokeRect(x1,y1,x2-x1,y2-y1);
+        } else {
+            gc.strokeRoundRect(x1,y1,x2-x1,y2-y1, (x2-x1)/2, (y2-y1)/2);
+        }
     }
 
     @Override

@@ -1,14 +1,13 @@
 import java.util.ArrayList;
-import java.util.TreeSet;
 
 public interface HeuristicStrategy {
-	void heuristic(EvolutionTree.EvolutionNode node2, ArrayList<TreeSet<Integer>> connection);
+	void heuristic(EvolutionTree.EvolutionNode node2, ArrayList<ArrayList<Integer>> connection);
 }
 
 class BarycenterStrategy implements HeuristicStrategy {
 
 	@Override
-	public void heuristic(EvolutionTree.EvolutionNode node2, ArrayList<TreeSet<Integer>> connection) {
+	public void heuristic(EvolutionTree.EvolutionNode node2, ArrayList<ArrayList<Integer>> connection) {
 		//pocitanie score pre chromozomy v node2
 		for (int i = 0; i < node2.chromosomes.size(); i++) {
 			for(Integer j : connection.get(i)){

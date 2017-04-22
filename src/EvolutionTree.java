@@ -743,20 +743,31 @@ class EvolutionTree {
 	        int k = 0;
 	        int l = node.chromosomes.get(0).genes.size() -1; //dalsi koniec chromozomu
 	        int m = 0; //na ktorom sme chromozome
+            double chromosomeStart = line_y;
 	        for (int a : node.genePos) {
 		        if (Settings.is_draw(node.allGenes.get(k))) {
-                        if (a != -1) {
-                            fac.drawGeneLine(prev_x, node.ancestor.gene_x_pos.get(a), line_x, line_y, node.allGenes.get(k));
-                        }
-                        if(k==l && l!= node.allGenes.size() - 1){
-                            line_y += Settings.line_gap + Settings.gene_width(node.allGenes.get(k))
-                                + Settings.chromosome_gap;
-                            m++;
-                            l += node.chromosomes.get(m).genes.size();
-                        } else line_y += Settings.line_gap + Settings.gene_width(node.allGenes.get(k));
+                    if (a != -1) {
+                        fac.drawGeneLine(prev_x, node.ancestor.gene_x_pos.get(a), line_x, line_y, node.allGenes.get(k));
                     }
-                    k++;
+                    //rectangle sa bude kreslit v tomto ife
+                    if(k==l && l!= node.allGenes.size() - 1){
+                        fac.drawRectangle(line_x - Settings.line_gap, chromosomeStart - Settings.line_gap,
+                            line_x + Settings.line_gap, line_y + Settings.line_gap,
+                            node.chromosomes.get(m).isCircular);
+                        line_y += Settings.line_gap + Settings.gene_width(node.allGenes.get(k))
+                            + Settings.chromosome_gap;
+                        chromosomeStart = line_y;
+                        m++;
+                        l += node.chromosomes.get(m).genes.size();
+                    } else line_y += Settings.line_gap + Settings.gene_width(node.allGenes.get(k));
                 }
+                k++;
+            }
+            fac.drawRectangle(line_x - Settings.line_gap,
+                chromosomeStart - Settings.line_gap,
+                line_x + Settings.line_gap,
+                line_y - Settings.gene_width(node.allGenes.get(node.allGenes.size()-1)),
+                node.chromosomes.get(m).isCircular);
         } else {
             line_x = prev_x;
         }
@@ -774,7 +785,9 @@ class EvolutionTree {
                 //fac.setLineColor(this.gene_col[Math.abs(a)]);
                 node.gene_x_pos.add(line_y);
                 if (Settings.is_draw(a)) {
-                    fac.drawGeneLine(line_x, line_y, timedif_x, line_y, a);
+                    if(!node.event.equals("root")) {
+                        fac.drawGeneLine(line_x, line_y, timedif_x, line_y, a);
+                    }
                     line_y += Settings.line_gap + Settings.gene_width(a);
                 }
             }
@@ -791,7 +804,8 @@ class EvolutionTree {
         }
     }
 
-    int which_chromosome(EvolutionNode node, int pos){
+    private int which_chromosome(EvolutionNode node, int pos){
+        if(pos == -1) return pos;
         int which = -1;
         int counter = node.chromosomes.get(0).genes.size();
         for (int i = 0; i < node.chromosomes.size(); i++) {
@@ -802,7 +816,7 @@ class EvolutionTree {
         return which;
     }
 
-    int getNewPos(int oldPos, int beforeId, int afterId, EvolutionNode node){
+    private int getNewPos(int oldPos, int beforeId, int afterId, EvolutionNode node){
         if(oldPos == -1) return -1;
         if(beforeId == afterId) return oldPos;
         int result = oldPos;
@@ -840,84 +854,70 @@ class EvolutionTree {
             newGenePos.add(newPos);
             newChromosomeGenePos.add(newPos);
         }
+        node1.chromosomes.get(node1.chromosomes.size() - 1).genePos = newChromosomeGenePos;
         node1.genePos = newGenePos;
     }
 
     //nodeSet je stabilny, node2 premiesavame
     private void oneSidedOpt(Set<EvolutionNode> stableNodeSet, EvolutionNode unstableNode, boolean isBackwards){
-        //TODO prerobit aby to fungovalo aj pre dva nody
-        EvolutionNode node1 = (EvolutionNode) stableNodeSet.toArray()[0];
+        EvolutionNode stableNode1 = (EvolutionNode) stableNodeSet.toArray()[0];
 
-        //TODO mozno len udrziavat pre kazdy chromozom zoznam chromozomov, s ktorymi je spojeny, asi by mali mat ID
-        //connection je zoznam susedov (id chromozomov node1) pre kazdy chromozom node2
-        ArrayList<TreeSet<Integer>> connection = new ArrayList<>();
+        // zoznam id genov z druheho nodu(nodov), s ktorymi je chromozom spojeny, vyuzijeme v barycentrovej heuristike
+        ArrayList<ArrayList<Integer>> geneConnection = new ArrayList<>();
         for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
-            connection.add(new TreeSet<>());
+            geneConnection.add(new ArrayList<>());
         }
-        // toto pole hovori ktoremu chromozomu patri pozicia z genPos v node po node2
-        // tzn. node1 ked ideme smerom naspat a node2.getFirst() ked ideme dopredu
-        ArrayList<Integer> relativeChromosomesPos = new ArrayList<>();
-        // v tejto casti vytvaram arraylist connection a pole relativeCh pre oba pripady - dopredu a dozadu
-        int ch_number = 0;
+        // toto pole hovori ktoremu chromozomu patri pozicia z genPos v potomkovi unstableNode
+        // je potrebne aby sme si pamatali ako to bolo pred tym ako sa chromozomy premiesaju
+        ArrayList<Integer> relativeChromosomesPos1 = new ArrayList<>();
+        ArrayList<Integer> relativeChromosomesPos2 = new ArrayList<>();
+        // v tejto casti vytvaram arraylist geneConnection a pole relativeCh pre oba pripady dopredu, dozadu
         if(!isBackwards) {
-            int counter = unstableNode.chromosomes.get(0).genes.size();
-            for (int i = 0; i < unstableNode.genePos.size(); i++) {
-                if (i == counter) {
-                    ch_number++;
-                    counter += unstableNode.chromosomes.get(ch_number).genes.size();
-                }
-                if (unstableNode.genePos.get(i) == -1) continue;
-                connection.get(ch_number).add(which_chromosome(node1, unstableNode.genePos.get(i)));
-            }
-            if(unstableNode.getFirst() != null) {
-                counter = unstableNode.chromosomes.get(0).genes.size();
-                ch_number = 0;
+            if (unstableNode.getFirst() != null) {
                 for (int i = 0; i < unstableNode.getFirst().genePos.size(); i++) {
-                    if (i == counter) {
-                        ch_number++;
-                        counter += unstableNode.chromosomes.get(ch_number).genes.size();
-                    }
-                    if (unstableNode.getFirst().genePos.get(i) == -1) {
-                        relativeChromosomesPos.add(-1);
-                        continue;
-                    }
-                    relativeChromosomesPos.add(which_chromosome(unstableNode, unstableNode.getFirst().genePos.get(i)));
+                    relativeChromosomesPos1.add(which_chromosome(unstableNode, unstableNode.getFirst().genePos.get(i)));
                 }
+            }
+            if (unstableNode.getSecond() != null) {
+                for (int i = 0; i < unstableNode.getSecond().genePos.size(); i++) {
+                    relativeChromosomesPos2.add(which_chromosome(unstableNode, unstableNode.getSecond().genePos.get(i)));
+                }
+            }
+            for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
+                HashSet<Integer> genePosSet = new HashSet<>();
+                genePosSet.addAll(unstableNode.chromosomes.get(i).genePos);
+                genePosSet.remove(-1);
+                geneConnection.get(i).addAll(genePosSet);
             }
         } else {
-            if (stableNodeSet.size() == 1) {
-                int counter = node1.chromosomes.get(0).genes.size();
-                for (int i = 0; i < node1.genePos.size(); i++) {
-                    if (i == counter) {
-                        ch_number++;
-                        counter += node1.chromosomes.get(ch_number).genes.size();
+            for (int i = 0; i < stableNode1.genePos.size(); i++) {
+                int which_ch = which_chromosome(unstableNode, stableNode1.genePos.get(i));
+                relativeChromosomesPos1.add(which_ch);
+                if(which_ch != -1) {
+                    geneConnection.get(which_ch).add(i);
+                }
+            }
+            if(stableNodeSet.size() == 2){
+                for (int i = 0; i < unstableNode.getSecond().genePos.size(); i++) {
+                    int which_ch = which_chromosome(unstableNode, unstableNode.getSecond().genePos.get(i));
+                    relativeChromosomesPos2.add(which_ch);
+                    if(which_ch != -1) {
+                        geneConnection.get(which_ch).add(i);
                     }
-                    if (node1.genePos.get(i) == -1) {
-                        relativeChromosomesPos.add(-1);
-                        continue;
-                    }
-                    int which_ch = which_chromosome(unstableNode, node1.genePos.get(i));
-                    connection.get(which_ch).add(ch_number);
-                    relativeChromosomesPos.add(which_ch);
                 }
             }
         }
 
-        strategy.heuristic(unstableNode, connection);
+        strategy.heuristic(unstableNode, geneConnection);
 
         // najdenie noveho genePos pre nasledovnika node2
         // ak ideme dopredu tak pre nasledujuci node, ak dozadu tak pre node1
-        if(!isBackwards && unstableNode.getFirst()!=null){
-            if(unstableNode.getSecond() == null) {
-                changeGenePos(unstableNode.getFirst(), unstableNode, relativeChromosomesPos);
-            } else {
-                changeGenePos(unstableNode.getFirst(), unstableNode, relativeChromosomesPos);
-                changeGenePos(unstableNode.getSecond(), unstableNode, relativeChromosomesPos);
-            }
-        } else if(isBackwards) {
-            changeGenePos(node1, unstableNode, relativeChromosomesPos);
+        if(unstableNode.getFirst()!= null) {
+            changeGenePos(unstableNode.getFirst(), unstableNode, relativeChromosomesPos1);
         }
-
+        if(unstableNode.getSecond()!= null) {
+            changeGenePos(unstableNode.getSecond(), unstableNode, relativeChromosomesPos2);
+        }
         // uz len oprava arraylistov allGenes a genePos + vynulovanie skore pre node2
         ArrayList<Integer> newAllGenes = new ArrayList<>();
         ArrayList<Integer> newGenePos = new ArrayList<>();
@@ -934,9 +934,32 @@ class EvolutionTree {
     // toto sa stane ked sa klikne na tlacidlo Minimize Crossings
     // zatial ide algoritmus len raz tam a naspat
     void level_by_level_sweep(){
-        //TODO asi tu bude nieco na ratanie crossingov a bude to robit dovtedy
+        //TODO pamatam si najlepsi, ked sa to 5 krat zhorsi, beriem najlepsi
         if(this.getRoot() == null) return;
+        int counter = 0;
+        System.out.println(countCrossings(this.getRoot()));
         optimalizuj(this.getRoot());
+//        int bestCrossings = countCrossings(this.getRoot());
+//        EvolutionTree bestTree = new EvolutionTree();
+//        bestTree.
+//        while(!(counter == 5)){
+//            optimalizuj(this.getRoot());
+//            int crossingNumber = countCrossings(this.getRoot());
+//            if(crossingNumber > bestCrossings){
+//                counter++;
+//            } else if(crossingNumber < bestCrossings){
+//                bestCrossings = crossingNumber;
+//                bestTree = this;
+//            }
+//        }
+//        this. = bestTree;
+
+//        int firstOpt = optimalizuj(this.getRoot());
+//        int secondOpt = firstOpt - 1;
+//        while (!(firstOpt == secondOpt)){
+//            firstOpt = optimalizuj(this.getRoot(), 0);
+//            secondOpt = optimalizuj(this.getRoot(), 0);
+//        }
     }
 
 
@@ -957,6 +980,36 @@ class EvolutionTree {
             }
             oneSidedOpt(set, node, true);
         }
+    }
+    private int countCrossings(EvolutionNode node) {
+        int sum = 0;
+        if (node.getFirst() != null) {
+            sum = countCrossings2Layers(node, node.getFirst()) + countCrossings(node.getFirst());
+            if(node.getSecond() != null) {
+                sum += countCrossings2Layers(node, node.getSecond()) + countCrossings(node.getSecond());
+            }
+        }
+        return sum;
+    }
+
+    private int countCrossings2Layers(EvolutionNode node1, EvolutionNode node2) {
+        int crossings = 0;
+        for (int i = 0; i < node2.genePos.size(); i++) {
+            int from = node2.genePos.get(i);
+            if(from!= -1) {
+                int geneFrom = node1.allGenes.get(from);
+                int geneTo = node2.allGenes.get(i);
+                //ak nastala zmena orientacie, tiez sa to berie ako crossing
+                if ((geneFrom < 0 && geneTo > 0) || (geneFrom > 0 && geneTo < 0)) {
+                    crossings++;
+                }
+            }
+            for (int j = i+1; j < node2.genePos.size(); j++){
+                int newFrom = node2.genePos.get(j);
+                if(newFrom != -1 && newFrom < from) crossings++;
+            }
+        }
+        return crossings;
     }
 
     public void setStrategy(HeuristicStrategy strategy){

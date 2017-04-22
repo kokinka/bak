@@ -21,6 +21,8 @@ abstract class DrawFactory {
 
     public abstract void drawGeneLine(double x1, double y1, double x2, double y2, int gene);
 
+    public abstract void drawRectangle(double x1, double y1, double x2, double y2, boolean isCircular);
+
     public abstract void setLineWidth(double width);
 
     public abstract void clear();
