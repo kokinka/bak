@@ -1,4 +1,3 @@
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -132,8 +131,8 @@ class EvolutionTree {
         private String event;
         private double time;
         ArrayList<Chromosome> chromosomes;
-        private ArrayList<Integer> allGenes;
-        private ArrayList<Integer> genePos;
+        ArrayList<Integer> allGenes;
+        ArrayList<Integer> genePos;
         private ArrayList<Integer> gene_x_pos;
         private ArrayList<Integer> blockNumAncF;
         private ArrayList<Integer> blockNumAncS;
@@ -316,7 +315,7 @@ class EvolutionTree {
     public void print(DrawFactory fac) {
         calcwidth(this.getRoot());
         fac.setLineWidth(Settings.line_size);
-        rek(this.getRoot(), 5, 0, 0, Settings.height, fac);
+        rek(this.getRoot(), 0, 0, 0, Settings.height, fac);
     }
 
     private int calcwidth(EvolutionNode node) {
@@ -726,11 +725,12 @@ class EvolutionTree {
 
     private void rek(EvolutionNode node, double prev_x, double prev_y, int block_y, int block_w, DrawFactory fac) {
         int first_y;
-        int timedif_x;
+        int timedif_x = 0;
         int line_y;
         double line_x;
         node.gene_x_pos = new ArrayList();
         first_y = block_y + (block_w - node.calcNodeWidth()) / 2;
+        if(!node.event.equals("root"))
         timedif_x = (int) (Math.max(node.next - Settings.time_diff, node.time) * Settings.scale_x);
         line_x = node.time * Settings.scale_x;
         if (!node.event.equals("root")) {
@@ -785,9 +785,7 @@ class EvolutionTree {
                 //fac.setLineColor(this.gene_col[Math.abs(a)]);
                 node.gene_x_pos.add(line_y);
                 if (Settings.is_draw(a)) {
-                    if(!node.event.equals("root")) {
-                        fac.drawGeneLine(line_x, line_y, timedif_x, line_y, a);
-                    }
+                    fac.drawGeneLine(line_x, line_y, timedif_x, line_y, a);
                     line_y += Settings.line_gap + Settings.gene_width(a);
                 }
             }
@@ -804,7 +802,7 @@ class EvolutionTree {
         }
     }
 
-    private int which_chromosome(EvolutionNode node, int pos){
+    int which_chromosome(EvolutionNode node, int pos){
         if(pos == -1) return pos;
         int which = -1;
         int counter = node.chromosomes.get(0).genes.size();
@@ -830,7 +828,7 @@ class EvolutionTree {
     }
 
     // zmeni genePos pre chromozomy v node1, aj cely genePos v node1 podla toho ako sa premiesal node2
-    private void changeGenePos(EvolutionNode node1, EvolutionNode node2, ArrayList<Integer> relativeChromosomesPos) {
+    void changeGenePos(EvolutionNode node1, EvolutionNode node2, ArrayList<Integer> relativeChromosomesPos) {
         ArrayList<Integer> newGenePos = new ArrayList<>();
         int counter = node1.chromosomes.get(0).genePos.size();
         int which_ch = 0;
@@ -909,9 +907,218 @@ class EvolutionTree {
         }
 
         strategy.heuristic(unstableNode, geneConnection);
+        normalizeNode(unstableNode, relativeChromosomesPos1, relativeChromosomesPos2);
 
-        // najdenie noveho genePos pre nasledovnika node2
-        // ak ideme dopredu tak pre nasledujuci node, ak dozadu tak pre node1
+        if(!isBackwards){
+        //TODO je to jedno ci rezem predtym alebo teraz?
+            for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
+//                Random random = new Random();
+//                int r = random.nextInt(2);
+//                switch (r){
+//                   case 0 :
+//                        if(chcemOtacat(unstableNode.chromosomes.get(i), unstableNode.ancestor)){
+//                            otoc(unstableNode, i);
+//                        }
+//                        rez(unstableNode, i, chcemRezat(unstableNode.chromosomes.get(i)));
+//                        break;
+//                    case 1 :
+//                        rez(unstableNode, i, chcemRezat(unstableNode.chromosomes.get(i)));
+//                        if(chcemOtacat(unstableNode.chromosomes.get(i), unstableNode.ancestor)){
+//                            otoc(unstableNode, i);
+//                        }
+//                        break;
+//
+//                }
+                if (chcemOtacatOpt(unstableNode.chromosomes.get(i), unstableNode.ancestor)) {
+                    otoc(unstableNode, i);
+                }
+                rez(unstableNode, i, chcemRezatOpt(unstableNode.chromosomes.get(i)));
+            }
+        } else if(unstableNode.event.equals("root")){
+            for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
+                otocRootAkTreba(unstableNode, i);
+            }
+        }
+    }
+
+//    private int chcemRezat(Chromosome ch) {
+//        Map<Integer, Integer> sortedMap = new TreeMap<>();
+//
+//        for (int i = 0; i < ch.genePos.size(); i++) {
+//            if(ch.genePos.get(i) == -1) continue;
+//            sortedMap.put(i, ch.genePos.get(i));
+//        }
+//
+//        List<Map.Entry<Integer, Integer>> list = new ArrayList<>();
+//        list.addAll(sortedMap.entrySet());
+//        list.sort(Comparator.comparingInt(Map.Entry::getValue));
+//
+//        int maxCrossingsOfGene = 0;
+//        int maxGene = -1;
+//        boolean isUp = true;
+//        for(Map.Entry<Integer, Integer> entry : list){
+//            int pos = entry.getValue();
+//            int j = entry.getKey();
+//            int crossings = 0;
+//            for (int i = 0; i < j; i++) {
+//                if(ch.genePos.get(i) == -1) continue;
+//                if(ch.genePos.get(i) > pos) crossings++;
+//            }
+//            if(crossings > maxCrossingsOfGene){
+//                maxCrossingsOfGene = crossings;
+//                maxGene = j;
+//                isUp = true;
+//            }
+//            crossings = 0;
+//            for (int i = j+1; i < ch.genePos.size(); i++) {
+//                if(ch.genePos.get(i) == -1) continue;
+//                if(ch.genePos.get(i) < pos) crossings++;
+//            }
+//            if(crossings >= maxCrossingsOfGene){
+//                maxCrossingsOfGene = crossings;
+//                maxGene = j;
+//                isUp = false;
+//            }
+//        }
+//
+//        if(maxCrossingsOfGene < list.size()/2) return 0;
+//
+//        //este porovnam ze ked to uz prerezem, ci mi nevznikne nejaky s vacsim poctom krizeni
+//        ArrayList<Integer> newGenePos = new ArrayList<>();
+//        for (int i = maxGene; i < ch.genePos.size(); i++) {
+//            newGenePos.add(ch.genePos.get(i));
+//        }
+//        for (int i = 0; i < maxGene; i++) {
+//            newGenePos.add(ch.genePos.get(i));
+//        }
+//
+//        int maxCrossings = 0;
+//        for(int j = 0; j < newGenePos.size(); j++){
+//            int crossings = 0;
+//            for (int i = 0; i < j; i++) {
+//                if(newGenePos.get(i) == -1) continue;
+//                if(newGenePos.get(i) > newGenePos.get(j)) crossings++;
+//            }
+//            if(crossings > maxCrossings){
+//                maxCrossings = crossings;
+//            }
+//            crossings = 0;
+//            for (int i = j+1; i < newGenePos.size(); i++) {
+//                if(newGenePos.get(i) == -1) continue;
+//                if(newGenePos.get(i) < newGenePos.get(j)) crossings++;
+//            }
+//            if(crossings > maxCrossings){
+//                maxCrossings = crossings;
+//            }
+//        }
+//
+//        if(maxCrossings > maxCrossingsOfGene) return 0;
+//        if(isUp) return maxGene;
+//        else if(maxGene < ch.genePos.size() - 1) return maxGene + 1;
+//
+//        return 0;
+//    }
+
+    private int chcemRezatOpt(Chromosome ch) {
+        if(!ch.isCircular) return 0;
+        int najuspesnejsiRez = 0;
+        int minPocetKrizeni = spocitajKrizeniaPreChromozom(ch.genePos);
+        for (int rez = 1; rez < ch.genePos.size(); rez++) {
+            ArrayList<Integer> newGenePos = new ArrayList<>();
+            for (int j = rez; j < ch.genePos.size(); j++) {
+                newGenePos.add(ch.genePos.get(j));
+            }
+            for (int j = 0; j < rez; j++) {
+                newGenePos.add(ch.genePos.get(j));
+            }
+            if(spocitajKrizeniaPreChromozom(newGenePos) < minPocetKrizeni) {
+                najuspesnejsiRez = rez;
+            }
+        }
+
+        return najuspesnejsiRez;
+    }
+
+    private int spocitajKrizeniaPreChromozom(ArrayList<Integer> genePos) {
+        int crossings = 0;
+        for(int j = 0; j < genePos.size(); j++){
+            for (int i = j+1; i < genePos.size(); i++) {
+                if(genePos.get(i) == -1) continue;
+                if(genePos.get(i) < genePos.get(j)) crossings++;
+            }
+        }
+        return crossings;
+    }
+
+//    private boolean chcemOtacat(Chromosome ch, EvolutionNode ancestor) {
+//        int myCrossings = 0;
+//        int reverseGenes = 0;
+//        Map<Integer, Integer> map = new TreeMap<>();
+//
+//        for (int i = 0; i < ch.genePos.size(); i++) {
+//            if(ch.genes.get(i) < 0)  reverseGenes++;
+//            if(ch.genePos.get(i) == -1) continue;
+//            int ancestorGene = ancestor.allGenes.get(ch.genePos.get(i));
+//            if((ancestorGene >= 0 && ch.genes.get(i) < 0)
+//                || (ancestorGene < 0 && ch.genes.get(i) >= 0)
+//                ) myCrossings++;
+//            map.put(i, ch.genePos.get(i));
+//        }
+//        List<Map.Entry<Integer, Integer>> list = new ArrayList<>();
+//        list.addAll(map.entrySet());
+//        list.sort(Comparator.comparingInt(Map.Entry::getValue));
+//        int maxCrossings = list.size()*(list.size()+1)/2;
+//
+//        for(Map.Entry<Integer, Integer> entry : list){
+//            int pos = entry.getValue();
+//            int j = entry.getKey();
+//            for (int i = 0; i < j; i++) {
+//                if(ch.genePos.get(i) > pos) myCrossings++;
+//            }
+//        }
+//
+//        return myCrossings + reverseGenes > (maxCrossings/2) + (ch.genes.size()/2);
+//    }
+
+    private boolean chcemOtacatOpt(Chromosome ch, EvolutionNode ancestor) {
+        int myCrossings1 = spocitajKrizeniaPreChromozom(ch.genePos);
+        int reverseGenes = 0;
+        ArrayList<Integer> newGenePos = new ArrayList<>();
+        //TODO je crossing len ciarkovana alebo zmena na ciarkovanu alebo zmena celkovo?
+        for (int i = ch.genePos.size() -1; i >= 0; i--) {
+            if(ch.genePos.get(i) != -1) {
+                int ancestorGene = ancestor.allGenes.get(ch.genePos.get(i));
+                if ((ancestorGene >= 0 && ch.genes.get(i) < 0)
+                    || (ancestorGene < 0 && ch.genes.get(i) >= 0)
+                    ) reverseGenes++;
+            }
+            if(ch.genes.get(i) < 0)  reverseGenes++;
+            newGenePos.add(ch.genePos.get(i));
+        }
+        int myCrossings2 = spocitajKrizeniaPreChromozom(newGenePos);
+        return myCrossings1 + reverseGenes > myCrossings2 + (2*ch.genes.size() - reverseGenes);
+    }
+
+    private void otocRootAkTreba(EvolutionNode node, int ktory){
+        int crossings1 = 0;
+        if(node.getFirst() != null)
+            crossings1 = countCrossings2Layers(node, node.getFirst());
+        if(node.getSecond() != null)
+            crossings1 += countCrossings2Layers(node, node.getSecond());
+
+        otoc(node, ktory);
+
+        int crossings2 = 0;
+        if(node.getFirst() != null)
+            crossings2 = countCrossings2Layers(node, node.getFirst());
+        if(node.getSecond() != null)
+            crossings2 += countCrossings2Layers(node, node.getSecond());
+
+        if (crossings2 > crossings1) otoc(node, ktory);
+    }
+
+    void normalizeNode(EvolutionNode unstableNode, ArrayList<Integer> relativeChromosomesPos1, ArrayList<Integer> relativeChromosomesPos2) {
+        // najdenie noveho genePos pre nasledovnikov node2
         if(unstableNode.getFirst()!= null) {
             changeGenePos(unstableNode.getFirst(), unstableNode, relativeChromosomesPos1);
         }
@@ -928,17 +1135,26 @@ class EvolutionTree {
         }
         unstableNode.allGenes = newAllGenes;
         unstableNode.genePos = newGenePos;
-
     }
 
+    //TODO pamatam si najlepsi, ked sa to 5 krat zhorsi, beriem najlepsi
     // toto sa stane ked sa klikne na tlacidlo Minimize Crossings
     // zatial ide algoritmus len raz tam a naspat
     void level_by_level_sweep(){
-        //TODO pamatam si najlepsi, ked sa to 5 krat zhorsi, beriem najlepsi
         if(this.getRoot() == null) return;
-        int counter = 0;
-        System.out.println(countCrossings(this.getRoot()));
-        optimalizuj(this.getRoot());
+        int crossings1 = countCrossings(this.getRoot());
+        System.out.println(crossings1);
+        int crossings2 = 0;
+        while (!(crossings1 == crossings2)){
+            optimalizuj(this.getRoot());
+            crossings1 = countCrossings(this.getRoot());
+            System.out.println(crossings1);
+
+            optimalizuj(this.getRoot());
+            crossings2 = countCrossings(this.getRoot());
+            System.out.println(crossings2);
+        }
+
 //        int bestCrossings = countCrossings(this.getRoot());
 //        EvolutionTree bestTree = new EvolutionTree();
 //        bestTree.
@@ -953,13 +1169,6 @@ class EvolutionTree {
 //            }
 //        }
 //        this. = bestTree;
-
-//        int firstOpt = optimalizuj(this.getRoot());
-//        int secondOpt = firstOpt - 1;
-//        while (!(firstOpt == secondOpt)){
-//            firstOpt = optimalizuj(this.getRoot(), 0);
-//            secondOpt = optimalizuj(this.getRoot(), 0);
-//        }
     }
 
 
@@ -993,6 +1202,7 @@ class EvolutionTree {
     }
 
     private int countCrossings2Layers(EvolutionNode node1, EvolutionNode node2) {
+        //if(node2 == null) return 0;
         int crossings = 0;
         for (int i = 0; i < node2.genePos.size(); i++) {
             int from = node2.genePos.get(i);
@@ -1003,13 +1213,145 @@ class EvolutionTree {
                 if ((geneFrom < 0 && geneTo > 0) || (geneFrom > 0 && geneTo < 0)) {
                     crossings++;
                 }
+                if(geneFrom < 0 && node1.event.equals("root")) crossings++;
             }
+            if(node2.allGenes.get(i) < 0) crossings++;
             for (int j = i+1; j < node2.genePos.size(); j++){
                 int newFrom = node2.genePos.get(j);
                 if(newFrom != -1 && newFrom < from) crossings++;
             }
         }
         return crossings;
+    }
+
+    void otoc(EvolutionTree.EvolutionNode node, int ktory){
+        ArrayList<Integer> newChromosomeGenePos = new ArrayList<>();
+        ArrayList<Integer> newChromosomeGenes = new ArrayList<>();
+        Chromosome ch = node.chromosomes.get(ktory);
+        for (int i = ch.genePos.size() -1; i >= 0; i--) {
+            newChromosomeGenePos.add(ch.genePos.get(i));
+            newChromosomeGenes.add(ch.genes.get(i)*(-1));
+        }
+        int fromId = 0;
+        for (int i = 0; i < ktory; i++) {
+            fromId += node.chromosomes.get(i).genes.size();
+        }
+        int toId = fromId + ch.genes.size() - 1;
+
+        zmenGenePosPoOtacani(node.getFirst(), fromId, toId);
+        zmenGenePosPoOtacani(node.getSecond(), fromId, toId);
+
+        ArrayList<Integer> newAllGenes = new ArrayList<>();
+        ArrayList<Integer> newGenePos = new ArrayList<>();
+        for (int i = 0; i < node.chromosomes.size(); i++) {
+            if(i == ktory){
+                ch.genePos = newChromosomeGenePos;
+                ch.genes = newChromosomeGenes;
+            }
+            newAllGenes.addAll(node.chromosomes.get(i).genes);
+            newGenePos.addAll(node.chromosomes.get(i).genePos);
+        }
+        node.allGenes = newAllGenes;
+        node.genePos = newGenePos;
+    }
+
+    private void zmenGenePosPoOtacani(EvolutionTree.EvolutionNode node, int fromId, int toId){
+        if(node == null) return;
+
+        ArrayList<Integer> newGenePos = new ArrayList<>();
+        int counter = node.chromosomes.get(0).genePos.size();
+        int which_ch = 0;
+        ArrayList<Integer> newChromosomeGenePos = new ArrayList<>();
+        for (int i = 0; i < node.genePos.size(); i++) {
+            if(i == counter){
+                node.chromosomes.get(which_ch).genePos = newChromosomeGenePos;
+                newChromosomeGenePos = new ArrayList<>();
+                which_ch++;
+                counter += node.chromosomes.get(which_ch).genePos.size();
+            }
+
+            if(node.genePos.get(i) >= fromId && node.genePos.get(i) <= toId){
+                int newPos = toId - node.genePos.get(i) + fromId;
+                newGenePos.add(newPos);
+                newChromosomeGenePos.add(newPos);
+            } else {
+                newGenePos.add(node.genePos.get(i));
+                newChromosomeGenePos.add(node.genePos.get(i));
+            }
+        }
+        node.chromosomes.get(node.chromosomes.size() - 1).genePos = newChromosomeGenePos;
+        node.genePos = newGenePos;
+    }
+
+    void rez(EvolutionTree.EvolutionNode node, int ktory, int kde){
+        if(!node.chromosomes.get(ktory).isCircular) return;
+        if(kde == 0) return;
+
+        ArrayList<Integer> newChromosomeGenePos = new ArrayList<>();
+        ArrayList<Integer> newChromosomeGenes = new ArrayList<>();
+        Chromosome ch = node.chromosomes.get(ktory);
+        for (int i = kde; i < ch.genePos.size(); i++) {
+            newChromosomeGenePos.add(ch.genePos.get(i));
+            newChromosomeGenes.add(ch.genes.get(i));
+        }
+        for (int i = 0; i < kde; i++) {
+            newChromosomeGenePos.add(ch.genePos.get(i));
+            newChromosomeGenes.add(ch.genes.get(i));
+        }
+
+        int fromId = 0;
+        for (int i = 0; i < ktory; i++) {
+            fromId += node.chromosomes.get(i).genes.size();
+        }
+        int toId = fromId + ch.genes.size() - 1;
+
+        zmenGenePosPoRezani(node.getFirst(), fromId, toId, kde);
+        zmenGenePosPoRezani(node.getSecond(), fromId, toId, kde);
+
+        ArrayList<Integer> newAllGenes = new ArrayList<>();
+        ArrayList<Integer> newGenePos = new ArrayList<>();
+        for (int i = 0; i < node.chromosomes.size(); i++) {
+            if(i == ktory){
+                ch.genePos = newChromosomeGenePos;
+                ch.genes = newChromosomeGenes;
+            }
+            newAllGenes.addAll(node.chromosomes.get(i).genes);
+            newGenePos.addAll(node.chromosomes.get(i).genePos);
+        }
+        node.allGenes = newAllGenes;
+        node.genePos = newGenePos;
+    }
+
+    private void zmenGenePosPoRezani(EvolutionTree.EvolutionNode node, int fromId, int toId, int kde) {
+        if(node == null) return;
+
+        ArrayList<Integer> newGenePos = new ArrayList<>();
+        int counter = node.chromosomes.get(0).genePos.size();
+        int which_ch = 0;
+        ArrayList<Integer> newChromosomeGenePos = new ArrayList<>();
+        for (int i = 0; i < node.genePos.size(); i++) {
+            if(i == counter){
+                node.chromosomes.get(which_ch).genePos = newChromosomeGenePos;
+                newChromosomeGenePos = new ArrayList<>();
+                which_ch++;
+                counter += node.chromosomes.get(which_ch).genePos.size();
+            }
+
+            if(node.genePos.get(i) >= fromId && node.genePos.get(i) < fromId + kde) {
+                int newPos = node.genePos.get(i) + (toId - fromId - kde + 1);
+                newGenePos.add(newPos);
+                newChromosomeGenePos.add(newPos);
+            } else if(node.genePos.get(i) >= (fromId + kde) && node.genePos.get(i) <= toId){
+                int newPos = node.genePos.get(i) - kde;
+                newGenePos.add(newPos);
+                newChromosomeGenePos.add(newPos);
+            } else {
+                newGenePos.add(node.genePos.get(i));
+                newChromosomeGenePos.add(node.genePos.get(i));
+            }
+        }
+        node.chromosomes.get(node.chromosomes.size() - 1).genePos = newChromosomeGenePos;
+        node.genePos = newGenePos;
     }
 
     public void setStrategy(HeuristicStrategy strategy){
