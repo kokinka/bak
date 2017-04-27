@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
@@ -53,6 +54,7 @@ class EvolutionTree {
         //TODO to tu nebude
         this.strategy = new BarycenterStrategy();
     }
+
 
     public EvolutionNode getRoot() {
         return root;
@@ -816,7 +818,6 @@ class EvolutionTree {
 
     private int getNewPos(int oldPos, int beforeId, int afterId, EvolutionNode node){
         if(oldPos == -1) return -1;
-        if(beforeId == afterId) return oldPos;
         int result = oldPos;
         for (int i = 0; i < node.chromosomes.size(); i++) {
             if(node.chromosomes.get(i).relativeOrderID < beforeId){
@@ -858,7 +859,42 @@ class EvolutionTree {
 
     //nodeSet je stabilny, node2 premiesavame
     private void oneSidedOpt(Set<EvolutionNode> stableNodeSet, EvolutionNode unstableNode, boolean isBackwards){
-        EvolutionNode stableNode1 = (EvolutionNode) stableNodeSet.toArray()[0];
+        if(!isBackwards){
+            for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
+
+               ArrayList<Integer> result = rezatAOtocit(unstableNode.chromosomes.get(i), unstableNode.ancestor);
+                if(result.get(1) == 1) otoc(unstableNode, i);
+                rez(unstableNode, i, result.get(0));
+
+//                Random random = new Random();
+//                int r = random.nextInt(2);
+//                switch (r){
+//                   case 0 :
+//                        if(chcemOtacatOpt(unstableNode.chromosomes.get(i), unstableNode.ancestor)){
+//                            otoc(unstableNode, i);
+//                        }
+//                        rez(unstableNode, i, chcemRezatOpt(unstableNode.chromosomes.get(i)));
+//                        break;
+//                    case 1 :
+//                        rez(unstableNode, i, chcemRezatOpt(unstableNode.chromosomes.get(i)));
+//                        if(chcemOtacatOpt(unstableNode.chromosomes.get(i), unstableNode.ancestor)){
+//                            otoc(unstableNode, i);
+//                        }
+//                        break;
+//
+//                }
+
+//                rez(unstableNode, i, chcemRezatOpt(unstableNode.chromosomes.get(i)));
+//                if (chcemOtacatOpt(unstableNode.chromosomes.get(i), unstableNode.ancestor)) {
+//                    otoc(unstableNode, i);
+//                }
+            }
+        } else if(unstableNode.event.equals("root")){
+            for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
+                otocRootAkTreba(unstableNode, i);
+            }
+        }
+
 
         // zoznam id genov z druheho nodu(nodov), s ktorymi je chromozom spojeny, vyuzijeme v barycentrovej heuristike
         ArrayList<ArrayList<Integer>> geneConnection = new ArrayList<>();
@@ -882,14 +918,14 @@ class EvolutionTree {
                 }
             }
             for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
-                HashSet<Integer> genePosSet = new HashSet<>();
-                genePosSet.addAll(unstableNode.chromosomes.get(i).genePos);
-                genePosSet.remove(-1);
-                geneConnection.get(i).addAll(genePosSet);
+                geneConnection.get(i).addAll(unstableNode.chromosomes.get(i).genePos);
+                ArrayList<Integer> minusJedna = new ArrayList<>();
+                minusJedna.add(-1);
+                geneConnection.get(i).removeAll(minusJedna);
             }
         } else {
-            for (int i = 0; i < stableNode1.genePos.size(); i++) {
-                int which_ch = which_chromosome(unstableNode, stableNode1.genePos.get(i));
+            for (int i = 0; i < unstableNode.getFirst().genePos.size(); i++) {
+                int which_ch = which_chromosome(unstableNode, unstableNode.getFirst().genePos.get(i));
                 relativeChromosomesPos1.add(which_ch);
                 if(which_ch != -1) {
                     geneConnection.get(which_ch).add(i);
@@ -909,36 +945,6 @@ class EvolutionTree {
         strategy.heuristic(unstableNode, geneConnection);
         normalizeNode(unstableNode, relativeChromosomesPos1, relativeChromosomesPos2);
 
-        if(!isBackwards){
-        //TODO je to jedno ci rezem predtym alebo teraz?
-            for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
-//                Random random = new Random();
-//                int r = random.nextInt(2);
-//                switch (r){
-//                   case 0 :
-//                        if(chcemOtacat(unstableNode.chromosomes.get(i), unstableNode.ancestor)){
-//                            otoc(unstableNode, i);
-//                        }
-//                        rez(unstableNode, i, chcemRezat(unstableNode.chromosomes.get(i)));
-//                        break;
-//                    case 1 :
-//                        rez(unstableNode, i, chcemRezat(unstableNode.chromosomes.get(i)));
-//                        if(chcemOtacat(unstableNode.chromosomes.get(i), unstableNode.ancestor)){
-//                            otoc(unstableNode, i);
-//                        }
-//                        break;
-//
-//                }
-                if (chcemOtacatOpt(unstableNode.chromosomes.get(i), unstableNode.ancestor)) {
-                    otoc(unstableNode, i);
-                }
-                rez(unstableNode, i, chcemRezatOpt(unstableNode.chromosomes.get(i)));
-            }
-        } else if(unstableNode.event.equals("root")){
-            for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
-                otocRootAkTreba(unstableNode, i);
-            }
-        }
     }
 
 //    private int chcemRezat(Chromosome ch) {
@@ -1031,12 +1037,64 @@ class EvolutionTree {
             for (int j = 0; j < rez; j++) {
                 newGenePos.add(ch.genePos.get(j));
             }
-            if(spocitajKrizeniaPreChromozom(newGenePos) < minPocetKrizeni) {
+            int pocetKrizeni = spocitajKrizeniaPreChromozom(newGenePos);
+            if(pocetKrizeni < minPocetKrizeni) {
+                minPocetKrizeni = pocetKrizeni;
                 najuspesnejsiRez = rez;
             }
         }
 
         return najuspesnejsiRez;
+    }
+
+
+    private ArrayList<Integer> rezatAOtocit(Chromosome ch, EvolutionNode ancestor) {
+        ArrayList<Integer> result = new ArrayList<>();
+        if(!ch.isCircular){
+            result.add(0);
+            if(chcemOtacatOpt(ch, ancestor)) result.add(1);
+            else result.add(0);
+            return result;
+        }
+        int najuspesnejsiRez = 0;
+        boolean chcemOtocit = chcemOtacatOpt(ch, ancestor);
+        int minPocetKrizeni = spocitajKrizeniaPreChromozom(ch.genePos);
+        for (int rez = 1; rez < ch.genePos.size(); rez++) {
+            ArrayList<Integer> newGenePos = new ArrayList<>();
+            ArrayList<Integer> newGenes = new ArrayList<>();
+            for (int j = rez; j < ch.genePos.size(); j++) {
+                newGenePos.add(ch.genePos.get(j));
+                newGenes.add(ch.genes.get(j));
+            }
+            for (int j = 0; j < rez; j++) {
+                newGenePos.add(ch.genePos.get(j));
+                newGenes.add(ch.genes.get(j));
+            }
+            Chromosome newCh = new Chromosome(newGenes, true);
+            newCh.genePos = newGenePos;
+            int pocetKrizeni;
+            if(chcemOtacatOpt(newCh, ancestor)) {
+                Collections.reverse(newGenePos);
+                pocetKrizeni = spocitajKrizeniaPreChromozom(newGenePos);
+                if (pocetKrizeni < minPocetKrizeni) {
+                    minPocetKrizeni = pocetKrizeni;
+                    najuspesnejsiRez = rez;
+                    chcemOtocit = true;
+                }
+            } else {
+                pocetKrizeni = spocitajKrizeniaPreChromozom(newGenePos);
+                if (pocetKrizeni < minPocetKrizeni) {
+                    minPocetKrizeni = pocetKrizeni;
+                    najuspesnejsiRez = rez;
+                    chcemOtocit = false;
+                }
+            }
+        }
+
+        result.add(najuspesnejsiRez);
+        if(chcemOtocit) result.add(1);
+        else result.add(0);
+        return result;
     }
 
     private int spocitajKrizeniaPreChromozom(ArrayList<Integer> genePos) {
@@ -1092,7 +1150,7 @@ class EvolutionTree {
                     || (ancestorGene < 0 && ch.genes.get(i) >= 0)
                     ) reverseGenes++;
             }
-            if(ch.genes.get(i) < 0)  reverseGenes++;
+            if(ch.genes.get(i) < 0) reverseGenes++;
             newGenePos.add(ch.genePos.get(i));
         }
         int myCrossings2 = spocitajKrizeniaPreChromozom(newGenePos);
