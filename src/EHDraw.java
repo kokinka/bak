@@ -42,13 +42,15 @@ public class EHDraw extends Application {
     static boolean optimize = false; // -opt
     static boolean export_greedy = false; //-exportgreedy
     static boolean export_ilp = false; //-exportilp
-    static boolean export_crossings = false;
+    static boolean export_minimized = false; //-exportminimized
     static boolean draw_svg = false; // -drawsvg
+    static boolean export_crossings = false; //-exportcrossingscount
     static String input; //-input:input.history
     static String svg_output = "output.svg";
     static String ilp_output = "output.lp";
     static String greedy_output = "output.greedy";
-    static String crossings_output = "output.crossings";
+    static String minimized_output = "minimized.history";
+    static String crossings_output = "crossings.txt";
     static String load_settings = null; //-settings:filename
     static String load_lp = null;
     static ComboBox pickGene ;
@@ -93,7 +95,7 @@ public class EHDraw extends Application {
             Button exportSettingsButton = new Button("Export Settings");
             Button redrawButton = new Button("Redraw");
             Button crossingsButton = new Button("Minimize crossings");
-            Button exportNewHistoryButton = new Button("Export new history");
+            Button exportHistoryButton = new Button("Export history");
 
             openButton.setOnAction(new OpenButtonHandler(primaryStage));
             optimizeButton.setOnAction(new OptimizeButtonHandler());
@@ -104,7 +106,7 @@ public class EHDraw extends Application {
             exportILPButton.setOnAction(new exportILPButtonHandler());
             importILPButton.setOnAction(new importILPButtonHandler());
             crossingsButton.setOnAction(new CrossingsButtonHandler());
-            exportNewHistoryButton.setOnAction(new ExportNewHistory());
+            exportHistoryButton.setOnAction(new ExportHistory());
 
 
             ObservableList<javafx.scene.Node> controls = controlsVBox.getChildren();
@@ -117,7 +119,7 @@ public class EHDraw extends Application {
             controls.add(importILPButton);
             controls.add(redrawButton);
             controls.add(crossingsButton);
-            controls.add(exportNewHistoryButton);
+            controls.add(exportHistoryButton);
 
             Label timeDiffL = new Label("Time diff");
             final TextField timeDiffF = new TextField(Double.toString(Settings.time_diff));
@@ -593,7 +595,7 @@ public class EHDraw extends Application {
         for (String s : args) {
             String[] splitted = s.split(":");
             switch (splitted[0]) {
-                case"-load_settings":
+                case "-load_settings":
                     load_settings=splitted[1];
                     break;
                 case "-exportgreedy":
@@ -602,8 +604,11 @@ public class EHDraw extends Application {
                 case "-exportilp":
                     export_ilp = true;
                     break;
-                case "-export_crossings":
+                case "-exportminimized":
+                    export_minimized = true;
+                case "-exportcrossings":
                     export_crossings = true;
+                    break;
                 case "-drawsvg":
                     draw_svg = true;
                     break;
@@ -629,15 +634,17 @@ public class EHDraw extends Application {
                 case "-load_lp":
                     load_lp = splitted[1];
                     break;
+                case "-minimized_output":
+                    minimized_output = splitted[1];
+                    break;
                 case "-crossings_output":
                     crossings_output = splitted[1];
                     break;
-
             }
         }
         if(gui){
             launch(args);
-        }else{
+        } else {
             File f = new File(input);
             strom.load(f);
             if (optimize) {
@@ -662,16 +669,27 @@ public class EHDraw extends Application {
                 strom.exportILP(bw);
                 fw.close();
             }
+            if(export_minimized){
+                File file = new File(minimized_output);
+                file.delete();
+                file.createNewFile();
+                FileWriter fw = new FileWriter(file.getAbsoluteFile());
+                BufferedWriter bw = new BufferedWriter(fw);
+                strom = strom.level_by_level_sweep();
+                strom.exportCrossings(bw);
+                fw.close();
+                export_minimized = false;
+            }
             if(export_crossings){
                 File file = new File(crossings_output);
                 file.delete();
                 file.createNewFile();
                 FileWriter fw = new FileWriter(file.getAbsoluteFile());
                 BufferedWriter bw = new BufferedWriter(fw);
-                strom.level_by_level_sweep();
-                strom.exportCrossings(bw);
+                bw.write(strom.countCrossings(strom.getRoot()).toString());
+                bw.close();
                 fw.close();
-
+                export_crossings = false;
             }
             if(load_settings!=null){
                 Settings.loadXML(load_settings);
@@ -689,7 +707,7 @@ public class EHDraw extends Application {
                 file.createNewFile();
                 drawF.export(file);
             }
-            System.exit(0);
+            //System.exit(0);
         }
     }
 
@@ -891,15 +909,15 @@ public class EHDraw extends Application {
 
         @Override
         public void handle(ActionEvent event) {
-            strom.level_by_level_sweep();
+            strom = strom.level_by_level_sweep();
             draw();
         }
 
     }
 
-    private static class ExportNewHistory implements EventHandler<ActionEvent> {
+    private static class ExportHistory implements EventHandler<ActionEvent> {
 
-        public ExportNewHistory() {
+        public ExportHistory() {
 
         }
 
@@ -907,7 +925,7 @@ public class EHDraw extends Application {
         public void handle(ActionEvent event) {
             try {
                 FileChooser fileChooser = new FileChooser();
-                fileChooser.setTitle("Export new history");
+                fileChooser.setTitle("Export history");
                 FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("HISTORY files (*.history)", "*.history");
                 fileChooser.getExtensionFilters().add(extFilter);
                 File file = fileChooser.showSaveDialog(primaryStage);

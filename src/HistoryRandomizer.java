@@ -63,12 +63,13 @@ class HistoryRandomizer {
 		strom.normalizeNode(node, relativeChromosomesPos1, relativeChromosomesPos2);
 	}
 
-	/** To use, call with one argument - path of the history file, you want to randomize **/
+	/** To use, call with two argument - path of the history file, you want to randomize
+	 * and path of the output file **/
 	public static void main(String[] args) throws IOException {
-		if(args.length != 1) throw new IllegalArgumentException("Wrong number of arguments");
-		File f = new File(args[0]);
-		strom.load(f);
-		File outFile = new File(args[0].split("\\.")[0] + "-random_output.history");
+		if(args.length != 2) throw new IllegalArgumentException("Wrong number of arguments");
+		File inFile = new File(args[0]);
+		strom.load(inFile);
+		File outFile = new File(args[1]);
 		outFile.delete();
 		outFile.createNewFile();
 		FileWriter fw = new FileWriter(outFile.getAbsoluteFile());

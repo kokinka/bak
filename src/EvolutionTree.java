@@ -3,7 +3,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
@@ -38,7 +37,6 @@ class EvolutionTree {
     private boolean optimized;
     private TreeSet<Integer> solution;
     private Set<Integer> genes;
-    private HeuristicStrategy strategy;
 
     public EvolutionTree() {
         this.root = null;
@@ -51,8 +49,39 @@ class EvolutionTree {
         this.optimized = false;
         this.solution = new TreeSet<Integer>();
         this.genes = new HashSet<Integer>();
-        //TODO to tu nebude
-        this.strategy = new BarycenterStrategy();
+    }
+
+    public EvolutionTree(EvolutionNode root, float scaleX, int diff_gen, boolean block_calced,
+        HashMap<Integer, Integer> block_cover, TreeSet<Integer> universe, HashMap<Integer, TreeSet<Integer>> sets,
+        boolean optimized, TreeSet<Integer> solution, Set<Integer> genes) {
+        this.root = root;
+        this.scaleX = scaleX;
+        this.diff_gen = diff_gen;
+        this.block_calced = block_calced;
+        this.block_cover = block_cover;
+        this.universe = universe;
+        this.sets = sets;
+        this.optimized = optimized;
+        this.solution = solution;
+        this.genes = genes;
+    }
+
+    public EvolutionTree copy(){
+        EvolutionNode root = this.root.copy();
+        HashMap<String, EvolutionNode> map = new HashMap<>();
+        map.putAll(this.map);
+        HashMap<Integer, Integer> block_cover = new HashMap<>();
+        block_cover.putAll(this.block_cover);
+        TreeSet<Integer> universe = new TreeSet<>();
+        universe.addAll(this.universe);
+        HashMap<Integer, TreeSet<Integer>> sets = new HashMap<>();
+        sets.putAll(this.sets);
+        TreeSet<Integer> solution = new TreeSet<>();
+        solution.addAll(this.solution);
+        Set<Integer> genes = new HashSet<>();
+        genes.addAll(this.genes);
+        return new EvolutionTree(root, this.scaleX, this.diff_gen, this.block_calced, block_cover, universe,
+            sets, this.optimized, solution, genes);
     }
 
 
@@ -166,6 +195,64 @@ class EvolutionTree {
             this.gene_x_pos = new ArrayList();
         }
 
+        //just for copy
+        public EvolutionNode(String name, String id, EvolutionNode first, EvolutionNode second,
+            String event, double time, ArrayList<Chromosome> chromosomes, ArrayList<Integer> allGenes,
+            ArrayList<Integer> genePos, ArrayList<Integer> gene_x_pos, ArrayList<Integer> blockNumAncF,
+            ArrayList<Integer> blockNumAncS, ArrayList<Integer> blockNumDes, HashMap<Integer, Integer> blockWidth,
+            double next, int ancestorNum, int width){
+            this.name = name;
+            this.id = id;
+            this.first = first;
+            this.second = second;
+            this.event = event;
+            this.time = time;
+            this.chromosomes = chromosomes;
+            this.allGenes = allGenes;
+            this.genePos = genePos;
+            this.gene_x_pos = gene_x_pos;
+            this.blockNumAncF = blockNumAncF;
+            this.blockNumAncS = blockNumAncS;
+            this.blockNumDes = blockNumDes;
+            this.blockWidth = blockWidth;
+            this.next = next;
+            this.ancestorNum = ancestorNum;
+            this.width = width;
+        }
+
+        EvolutionNode copy(){
+            EvolutionNode first = null;
+            EvolutionNode second = null;
+            if(this.first != null) first = this.first.copy();
+            if(this.second != null) second = this.second.copy();
+            ArrayList<Chromosome> chromosomes = new ArrayList<>();
+            for(Chromosome ch: this.chromosomes){
+                chromosomes.add(ch.copy());
+            }
+            ArrayList<Integer> allGenes = new ArrayList<>();
+            allGenes.addAll(this.allGenes);
+            ArrayList<Integer> genePos = new ArrayList<>();
+            genePos.addAll(this.genePos);
+            ArrayList<Integer> gene_x_pos = new ArrayList<>();
+            gene_x_pos.addAll(this.gene_x_pos);
+            ArrayList<Integer> blockNumAncF = new ArrayList<>();
+            blockNumAncF.addAll(this.blockNumAncF);
+            ArrayList<Integer> blockNumAncS = new ArrayList<>();
+            blockNumAncS.addAll(this.blockNumAncS);
+            ArrayList<Integer> blockNumDes = new ArrayList<>();
+            blockNumDes.addAll(this.blockNumDes);
+            HashMap<Integer, Integer> blockWidth = new HashMap<>();
+            blockWidth.putAll(this.blockWidth);
+
+            EvolutionNode ancestor = new EvolutionNode(this.name, this.id, first, second, this.event,
+                this.time, chromosomes, allGenes, genePos, gene_x_pos, blockNumAncF, blockNumAncS,
+                blockNumDes, blockWidth, this.next, this.ancestorNum, this.width);
+            if(first != null) first.ancestor = ancestor;
+            if(second != null) second.ancestor = ancestor;
+
+            return ancestor;
+        }
+
         public int getWidth() {
             return width;
         }
@@ -247,6 +334,7 @@ class EvolutionTree {
             String line = fileReader.nextLine();
             parse(line);
         }
+        fileReader.close();
         this.calcScale();
         Settings.setGenesSet(this.genes);
         Settings.calcColors();
@@ -357,7 +445,7 @@ class EvolutionTree {
 
     private int calcBlocks(EvolutionNode anc, EvolutionNode des, int num, boolean firstbool) {
         int i = num;
-        //TODO asi tam nebudu vsade allGenes, ale bude to nejako rozdelene na chromozomy
+        //TODO asi tam nebudu vsade allGenes, ale bude to nejako rozdelene na chromozomy, ak chceme vediet spajat optimalizacie
         for (int a : anc.allGenes) {
             anc.getancblock(firstbool).add(i);
             i++;
@@ -732,9 +820,8 @@ class EvolutionTree {
         double line_x;
         node.gene_x_pos = new ArrayList();
         first_y = block_y + (block_w - node.calcNodeWidth()) / 2;
-        if(!node.event.equals("root"))
-        timedif_x = (int) (Math.max(node.next - Settings.time_diff, node.time) * Settings.scale_x);
         line_x = node.time * Settings.scale_x;
+        timedif_x = (int) (Math.max(node.next - Settings.time_diff, node.time) * Settings.scale_x);
         if (!node.event.equals("root")) {
             int chromosomeDiff = node.chromosomes.size() - node.ancestor.chromosomes.size();
             if(chromosomeDiff == 0) {
@@ -777,11 +864,9 @@ class EvolutionTree {
         if (!node.event.equals("root")) {
             chromosomeDiff = node.chromosomes.size() - node.ancestor.chromosomes.size();
         }
-        if(chromosomeDiff == 0) {
-            line_y = first_y;
-        } else {
-            line_y = first_y - ((1/2) * chromosomeDiff * Settings.chromosome_gap);
-        }
+
+        line_y = first_y - ((1/2) * chromosomeDiff * Settings.chromosome_gap);
+
         for(Chromosome ch: node.chromosomes) {
             for (Integer a : ch.genes) {
                 //fac.setLineColor(this.gene_col[Math.abs(a)]);
@@ -857,44 +942,19 @@ class EvolutionTree {
         node1.genePos = newGenePos;
     }
 
-    //nodeSet je stabilny, node2 premiesavame
     private void oneSidedOpt(Set<EvolutionNode> stableNodeSet, EvolutionNode unstableNode, boolean isBackwards){
-        if(!isBackwards){
+        if(!isBackwards) {
             for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
-
-               ArrayList<Integer> result = rezatAOtocit(unstableNode.chromosomes.get(i), unstableNode.ancestor);
-                if(result.get(1) == 1) otoc(unstableNode, i);
-                rez(unstableNode, i, result.get(0));
-
-//                Random random = new Random();
-//                int r = random.nextInt(2);
-//                switch (r){
-//                   case 0 :
-//                        if(chcemOtacatOpt(unstableNode.chromosomes.get(i), unstableNode.ancestor)){
-//                            otoc(unstableNode, i);
-//                        }
-//                        rez(unstableNode, i, chcemRezatOpt(unstableNode.chromosomes.get(i)));
-//                        break;
-//                    case 1 :
-//                        rez(unstableNode, i, chcemRezatOpt(unstableNode.chromosomes.get(i)));
-//                        if(chcemOtacatOpt(unstableNode.chromosomes.get(i), unstableNode.ancestor)){
-//                            otoc(unstableNode, i);
-//                        }
-//                        break;
-//
-//                }
-
-//                rez(unstableNode, i, chcemRezatOpt(unstableNode.chromosomes.get(i)));
-//                if (chcemOtacatOpt(unstableNode.chromosomes.get(i), unstableNode.ancestor)) {
-//                    otoc(unstableNode, i);
-//                }
-            }
-        } else if(unstableNode.event.equals("root")){
-            for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
-                otocRootAkTreba(unstableNode, i);
+                if (stableNodeSet == null) otocChromozomVKoreni(unstableNode, i);
+                else {
+                    ArrayList<Integer> result = rezatAOtocit(unstableNode.chromosomes.get(i), unstableNode.ancestor);
+                    rez(unstableNode, i, result.get(0));
+                    if (result.get(1) == 1) otoc(unstableNode, i);
+                }
             }
         }
 
+        if(stableNodeSet == null) return;
 
         // zoznam id genov z druheho nodu(nodov), s ktorymi je chromozom spojeny, vyuzijeme v barycentrovej heuristike
         ArrayList<ArrayList<Integer>> geneConnection = new ArrayList<>();
@@ -942,123 +1002,45 @@ class EvolutionTree {
             }
         }
 
-        strategy.heuristic(unstableNode, geneConnection);
+        //pocitanie score pre chromozomy v node
+        for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
+            for(Integer j : geneConnection.get(i)){
+                unstableNode.chromosomes.get(i).score += j+1;
+            }
+            unstableNode.chromosomes.get(i).score /= geneConnection.get(i).size();
+        }
+
+        //pre kazdy chromozom v node si zapamatam ich aktualne poradie
+        for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
+            unstableNode.chromosomes.get(i).relativeOrderID = i;
+        }
+
+        //sortovanie chromozomov v node
+        (unstableNode.chromosomes).sort((o1, o2) -> {
+            if(o1.score > o2.score) return 1;
+            if(o1.score < o2.score) return -1;
+            return 0;
+        });
+
         normalizeNode(unstableNode, relativeChromosomesPos1, relativeChromosomesPos2);
 
     }
 
-//    private int chcemRezat(Chromosome ch) {
-//        Map<Integer, Integer> sortedMap = new TreeMap<>();
-//
-//        for (int i = 0; i < ch.genePos.size(); i++) {
-//            if(ch.genePos.get(i) == -1) continue;
-//            sortedMap.put(i, ch.genePos.get(i));
-//        }
-//
-//        List<Map.Entry<Integer, Integer>> list = new ArrayList<>();
-//        list.addAll(sortedMap.entrySet());
-//        list.sort(Comparator.comparingInt(Map.Entry::getValue));
-//
-//        int maxCrossingsOfGene = 0;
-//        int maxGene = -1;
-//        boolean isUp = true;
-//        for(Map.Entry<Integer, Integer> entry : list){
-//            int pos = entry.getValue();
-//            int j = entry.getKey();
-//            int crossings = 0;
-//            for (int i = 0; i < j; i++) {
-//                if(ch.genePos.get(i) == -1) continue;
-//                if(ch.genePos.get(i) > pos) crossings++;
-//            }
-//            if(crossings > maxCrossingsOfGene){
-//                maxCrossingsOfGene = crossings;
-//                maxGene = j;
-//                isUp = true;
-//            }
-//            crossings = 0;
-//            for (int i = j+1; i < ch.genePos.size(); i++) {
-//                if(ch.genePos.get(i) == -1) continue;
-//                if(ch.genePos.get(i) < pos) crossings++;
-//            }
-//            if(crossings >= maxCrossingsOfGene){
-//                maxCrossingsOfGene = crossings;
-//                maxGene = j;
-//                isUp = false;
-//            }
-//        }
-//
-//        if(maxCrossingsOfGene < list.size()/2) return 0;
-//
-//        //este porovnam ze ked to uz prerezem, ci mi nevznikne nejaky s vacsim poctom krizeni
-//        ArrayList<Integer> newGenePos = new ArrayList<>();
-//        for (int i = maxGene; i < ch.genePos.size(); i++) {
-//            newGenePos.add(ch.genePos.get(i));
-//        }
-//        for (int i = 0; i < maxGene; i++) {
-//            newGenePos.add(ch.genePos.get(i));
-//        }
-//
-//        int maxCrossings = 0;
-//        for(int j = 0; j < newGenePos.size(); j++){
-//            int crossings = 0;
-//            for (int i = 0; i < j; i++) {
-//                if(newGenePos.get(i) == -1) continue;
-//                if(newGenePos.get(i) > newGenePos.get(j)) crossings++;
-//            }
-//            if(crossings > maxCrossings){
-//                maxCrossings = crossings;
-//            }
-//            crossings = 0;
-//            for (int i = j+1; i < newGenePos.size(); i++) {
-//                if(newGenePos.get(i) == -1) continue;
-//                if(newGenePos.get(i) < newGenePos.get(j)) crossings++;
-//            }
-//            if(crossings > maxCrossings){
-//                maxCrossings = crossings;
-//            }
-//        }
-//
-//        if(maxCrossings > maxCrossingsOfGene) return 0;
-//        if(isUp) return maxGene;
-//        else if(maxGene < ch.genePos.size() - 1) return maxGene + 1;
-//
-//        return 0;
-//    }
-
-    private int chcemRezatOpt(Chromosome ch) {
-        if(!ch.isCircular) return 0;
-        int najuspesnejsiRez = 0;
-        int minPocetKrizeni = spocitajKrizeniaPreChromozom(ch.genePos);
-        for (int rez = 1; rez < ch.genePos.size(); rez++) {
-            ArrayList<Integer> newGenePos = new ArrayList<>();
-            for (int j = rez; j < ch.genePos.size(); j++) {
-                newGenePos.add(ch.genePos.get(j));
-            }
-            for (int j = 0; j < rez; j++) {
-                newGenePos.add(ch.genePos.get(j));
-            }
-            int pocetKrizeni = spocitajKrizeniaPreChromozom(newGenePos);
-            if(pocetKrizeni < minPocetKrizeni) {
-                minPocetKrizeni = pocetKrizeni;
-                najuspesnejsiRez = rez;
-            }
-        }
-
-        return najuspesnejsiRez;
-    }
-
-
     private ArrayList<Integer> rezatAOtocit(Chromosome ch, EvolutionNode ancestor) {
+        ArrayList<Integer> vysledokOtocenia = chcemOtacatOpt(ch, ancestor);
         ArrayList<Integer> result = new ArrayList<>();
         if(!ch.isCircular){
             result.add(0);
-            if(chcemOtacatOpt(ch, ancestor)) result.add(1);
+            if(vysledokOtocenia.get(0) == 1) result.add(1);
             else result.add(0);
             return result;
         }
         int najuspesnejsiRez = 0;
-        boolean chcemOtocit = chcemOtacatOpt(ch, ancestor);
-        int minPocetKrizeni = spocitajKrizeniaPreChromozom(ch.genePos);
+        boolean chcemOtocit;
+        if(vysledokOtocenia.get(0) == 1) {
+            chcemOtocit = true;
+        } else chcemOtocit = false;
+        int minPocetKrizeni = vysledokOtocenia.get(1);
         for (int rez = 1; rez < ch.genePos.size(); rez++) {
             ArrayList<Integer> newGenePos = new ArrayList<>();
             ArrayList<Integer> newGenes = new ArrayList<>();
@@ -1073,21 +1055,14 @@ class EvolutionTree {
             Chromosome newCh = new Chromosome(newGenes, true);
             newCh.genePos = newGenePos;
             int pocetKrizeni;
-            if(chcemOtacatOpt(newCh, ancestor)) {
-                Collections.reverse(newGenePos);
-                pocetKrizeni = spocitajKrizeniaPreChromozom(newGenePos);
-                if (pocetKrizeni < minPocetKrizeni) {
-                    minPocetKrizeni = pocetKrizeni;
-                    najuspesnejsiRez = rez;
+            vysledokOtocenia = chcemOtacatOpt(newCh, ancestor);
+            pocetKrizeni = vysledokOtocenia.get(1);
+            if (pocetKrizeni < minPocetKrizeni) {
+                minPocetKrizeni = pocetKrizeni;
+                najuspesnejsiRez = rez;
+                if(vysledokOtocenia.get(0) == 1) {
                     chcemOtocit = true;
-                }
-            } else {
-                pocetKrizeni = spocitajKrizeniaPreChromozom(newGenePos);
-                if (pocetKrizeni < minPocetKrizeni) {
-                    minPocetKrizeni = pocetKrizeni;
-                    najuspesnejsiRez = rez;
-                    chcemOtocit = false;
-                }
+                } else chcemOtocit = false;
             }
         }
 
@@ -1108,71 +1083,55 @@ class EvolutionTree {
         return crossings;
     }
 
-//    private boolean chcemOtacat(Chromosome ch, EvolutionNode ancestor) {
-//        int myCrossings = 0;
-//        int reverseGenes = 0;
-//        Map<Integer, Integer> map = new TreeMap<>();
-//
-//        for (int i = 0; i < ch.genePos.size(); i++) {
-//            if(ch.genes.get(i) < 0)  reverseGenes++;
-//            if(ch.genePos.get(i) == -1) continue;
-//            int ancestorGene = ancestor.allGenes.get(ch.genePos.get(i));
-//            if((ancestorGene >= 0 && ch.genes.get(i) < 0)
-//                || (ancestorGene < 0 && ch.genes.get(i) >= 0)
-//                ) myCrossings++;
-//            map.put(i, ch.genePos.get(i));
-//        }
-//        List<Map.Entry<Integer, Integer>> list = new ArrayList<>();
-//        list.addAll(map.entrySet());
-//        list.sort(Comparator.comparingInt(Map.Entry::getValue));
-//        int maxCrossings = list.size()*(list.size()+1)/2;
-//
-//        for(Map.Entry<Integer, Integer> entry : list){
-//            int pos = entry.getValue();
-//            int j = entry.getKey();
-//            for (int i = 0; i < j; i++) {
-//                if(ch.genePos.get(i) > pos) myCrossings++;
-//            }
-//        }
-//
-//        return myCrossings + reverseGenes > (maxCrossings/2) + (ch.genes.size()/2);
-//    }
-
-    private boolean chcemOtacatOpt(Chromosome ch, EvolutionNode ancestor) {
+    private ArrayList<Integer> chcemOtacatOpt(Chromosome ch, EvolutionNode ancestor) {
         int myCrossings1 = spocitajKrizeniaPreChromozom(ch.genePos);
-        int reverseGenes = 0;
+
         ArrayList<Integer> newGenePos = new ArrayList<>();
-        //TODO je crossing len ciarkovana alebo zmena na ciarkovanu alebo zmena celkovo?
+        ArrayList<Integer> newGenes = new ArrayList<>();
+
         for (int i = ch.genePos.size() -1; i >= 0; i--) {
             if(ch.genePos.get(i) != -1) {
                 int ancestorGene = ancestor.allGenes.get(ch.genePos.get(i));
                 if ((ancestorGene >= 0 && ch.genes.get(i) < 0)
                     || (ancestorGene < 0 && ch.genes.get(i) >= 0)
-                    ) reverseGenes++;
+                    ) myCrossings1++;
             }
-            if(ch.genes.get(i) < 0) reverseGenes++;
+            if(ch.genes.get(i) < 0) myCrossings1++;
             newGenePos.add(ch.genePos.get(i));
+            newGenes.add(ch.genes.get(i) * (-1));
         }
         int myCrossings2 = spocitajKrizeniaPreChromozom(newGenePos);
-        return myCrossings1 + reverseGenes > myCrossings2 + (2*ch.genes.size() - reverseGenes);
+        for (int i = ch.genePos.size() -1; i >= 0; i--) {
+            if(newGenePos.get(i) != -1) {
+                int ancestorGene = ancestor.allGenes.get(newGenePos.get(i));
+                if ((ancestorGene >= 0 && newGenes.get(i) < 0)
+                    || (ancestorGene < 0 && newGenes.get(i) >= 0)
+                    ) myCrossings2++;
+            }
+            if(newGenes.get(i) < 0) myCrossings2++;
+        }
+
+        ArrayList<Integer> result = new ArrayList<>();
+        if(myCrossings1 > myCrossings2){
+            result.add(1);
+            result.add(myCrossings2);
+        } else {
+            result.add(0);
+            result.add(myCrossings1);
+        }
+
+        return result;
     }
 
-    private void otocRootAkTreba(EvolutionNode node, int ktory){
-        int crossings1 = 0;
-        if(node.getFirst() != null)
-            crossings1 = countCrossings2Layers(node, node.getFirst());
-        if(node.getSecond() != null)
-            crossings1 += countCrossings2Layers(node, node.getSecond());
-
-        otoc(node, ktory);
-
-        int crossings2 = 0;
-        if(node.getFirst() != null)
-            crossings2 = countCrossings2Layers(node, node.getFirst());
-        if(node.getSecond() != null)
-            crossings2 += countCrossings2Layers(node, node.getSecond());
-
-        if (crossings2 > crossings1) otoc(node, ktory);
+    private void otocChromozomVKoreni(EvolutionNode node, int ktory){
+        int reverseGenes = 0;
+        Chromosome ch = node.chromosomes.get(ktory);
+        for (int i = 0; i < ch.genes.size(); i++) {
+            if(ch.genes.get(i) < 0){
+                reverseGenes++;
+            }
+        }
+        if(reverseGenes > ch.genes.size()/2) otoc(node, ktory);
     }
 
     void normalizeNode(EvolutionNode unstableNode, ArrayList<Integer> relativeChromosomesPos1, ArrayList<Integer> relativeChromosomesPos2) {
@@ -1195,38 +1154,26 @@ class EvolutionTree {
         unstableNode.genePos = newGenePos;
     }
 
-    //TODO pamatam si najlepsi, ked sa to 5 krat zhorsi, beriem najlepsi
-    // toto sa stane ked sa klikne na tlacidlo Minimize Crossings
-    // zatial ide algoritmus len raz tam a naspat
-    void level_by_level_sweep(){
-        if(this.getRoot() == null) return;
-        int crossings1 = countCrossings(this.getRoot());
-        System.out.println(crossings1);
-        int crossings2 = 0;
-        while (!(crossings1 == crossings2)){
+    EvolutionTree level_by_level_sweep(){
+        if(this.getRoot() == null) return null;
+        int counter = 0;
+        int bestCrossings = countCrossings(this.getRoot());
+        System.out.println(bestCrossings);
+        EvolutionTree bestTree = this.copy();
+        int lastCrossingNumber = Integer.MAX_VALUE;
+        while(!(counter == 5)){
             optimalizuj(this.getRoot());
-            crossings1 = countCrossings(this.getRoot());
-            System.out.println(crossings1);
-
-            optimalizuj(this.getRoot());
-            crossings2 = countCrossings(this.getRoot());
-            System.out.println(crossings2);
+            int crossingNumber = countCrossings(this.getRoot());
+            if(crossingNumber == lastCrossingNumber) break;
+            if(crossingNumber > lastCrossingNumber) counter++;
+            if(crossingNumber < bestCrossings){
+                bestCrossings = crossingNumber;
+                bestTree = this.copy();
+            }
+            lastCrossingNumber = crossingNumber;
         }
-
-//        int bestCrossings = countCrossings(this.getRoot());
-//        EvolutionTree bestTree = new EvolutionTree();
-//        bestTree.
-//        while(!(counter == 5)){
-//            optimalizuj(this.getRoot());
-//            int crossingNumber = countCrossings(this.getRoot());
-//            if(crossingNumber > bestCrossings){
-//                counter++;
-//            } else if(crossingNumber < bestCrossings){
-//                bestCrossings = crossingNumber;
-//                bestTree = this;
-//            }
-//        }
-//        this. = bestTree;
+        System.out.println(bestCrossings);
+        return bestTree;
     }
 
 
@@ -1235,7 +1182,7 @@ class EvolutionTree {
             Set<EvolutionNode> set = new HashSet<>();
             set.add(node.ancestor);
             oneSidedOpt(set, node, false);
-        }
+        } else oneSidedOpt(null, node, false);
 
         if (node.getFirst() != null) {
             Set<EvolutionNode> set = new HashSet<>();
@@ -1248,7 +1195,8 @@ class EvolutionTree {
             oneSidedOpt(set, node, true);
         }
     }
-    private int countCrossings(EvolutionNode node) {
+
+    Integer countCrossings(EvolutionNode node) {
         int sum = 0;
         if (node.getFirst() != null) {
             sum = countCrossings2Layers(node, node.getFirst()) + countCrossings(node.getFirst());
@@ -1410,9 +1358,5 @@ class EvolutionTree {
         }
         node.chromosomes.get(node.chromosomes.size() - 1).genePos = newChromosomeGenePos;
         node.genePos = newGenePos;
-    }
-
-    public void setStrategy(HeuristicStrategy strategy){
-        this.strategy = strategy;
     }
 }
