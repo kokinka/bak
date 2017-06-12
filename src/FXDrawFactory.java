@@ -2,8 +2,11 @@
 import static javafx.scene.paint.Color.BLACK;
 import static javafx.scene.paint.Color.WHITE;
 
+import java.util.ArrayList;
+
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.scene.text.TextAlignment;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -55,7 +58,16 @@ class FXDrawFactory extends DrawFactory {
         }
     }
 
-    @Override
+	@Override public void writeLeafName(String name, double x, double y) {
+        gc.setStroke(BLACK);
+        gc.setTextAlign(TextAlignment.RIGHT);
+        gc.setLineDashes(null);
+        gc.setLineWidth(1);
+        gc.strokeText(name, x, y - (gc.getFont().getSize()/2));
+        gc.setLineWidth(Settings.line_size);
+	}
+
+	@Override
     public void setLineWidth(double width) {
         gc.setLineWidth(width);
     }
@@ -66,4 +78,20 @@ class FXDrawFactory extends DrawFactory {
         gc.fillRect(0, 0, Settings.width, Settings.height);
     }
 
+    @Override public void writeGeneNames(ArrayList<Integer> allGenes, ArrayList<Integer> gene_y_pos) {
+        gc.setStroke(BLACK);
+        gc.setTextAlign(TextAlignment.RIGHT);
+        gc.setLineDashes(null);
+        gc.setLineWidth(1);
+        for (int i = 0; i < allGenes.size(); i++) {
+            if(Settings.gene_name(allGenes.get(i)) != null){
+               gc.strokeText(Settings.gene_name(allGenes.get(i)), 5, gene_y_pos.get(i));
+            }
+        }
+        gc.setLineWidth(Settings.line_size);
+    }
+
+    @Override public void translateX(int i) {
+        gc.translate(i, 0);
+    }
 }

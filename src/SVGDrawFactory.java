@@ -10,8 +10,10 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javafx.scene.paint.Color;
 import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.svggen.SVGGraphics2D;
@@ -85,6 +87,36 @@ class SVGDrawFactory extends DrawFactory {
         } else {
             g2d.drawRoundRect((int)x1,(int)y1,(int)(x2-x1),(int)(y2-y1), (int)((x2-x1)/2), (int)((y2-y1)/2));
         }
+    }
+
+    @Override public void writeLeafName(String name, double x, double y) {
+        this.setLineColor(BLACK);
+
+        Stroke normal;
+        normal = new BasicStroke((float) this.width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
+        g2d.setStroke(normal);
+
+        g2d.drawString(name, (float) (x-(name.length()*g2d.getFont().getSize()/2)),
+            (float) (y-(g2d.getFont().getSize()/2)));
+    }
+
+    @Override public void writeGeneNames(ArrayList<Integer> allGenes, ArrayList<Integer> gene_y_pos) {
+        this.setLineColor(BLACK);
+
+        Stroke normal;
+        normal = new BasicStroke((float) this.width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
+        g2d.setStroke(normal);
+
+        for (int i = 0; i < allGenes.size(); i++) {
+            String geneName = Settings.gene_name(allGenes.get(i));
+            if(geneName!= null){
+                g2d.drawString(geneName, 5, gene_y_pos.get(i));
+            }
+        }
+    }
+
+    @Override public void translateX(int i) {
+        g2d.translate(i,0);
     }
 
     @Override

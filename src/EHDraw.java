@@ -21,6 +21,7 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -361,9 +362,27 @@ public class EHDraw extends Application {
                updated();
             }
         });
+
+        CheckBox showBoxesCB = new CheckBox("Show chromosome boxes");
+        showBoxesCB.setSelected(true);
+        showBoxesCB.setOnAction(new EventHandler<ActionEvent>() {
+            @Override public void handle(ActionEvent event) {
+                Settings.showBoxes = !Settings.showBoxes;
+                updated();
+            }
+        });
+
+        CheckBox showLeafNames = new CheckBox("Show leaf names");
+        showLeafNames.setSelected(true);
+        showLeafNames.setOnAction(new EventHandler<ActionEvent>() {
+            @Override public void handle(ActionEvent event) {
+                Settings.showLeafNames = !Settings.showLeafNames;
+                updated();
+            }
+        });
                         metaclear();
                         attach_listeners();
-            globalsVBox.getChildren().addAll(timeDiffH, widthH, heightH, nodeGapH, chromosomeGapH, lineGapH, lineSizeH, satH, briH,optH, nonhighlightedH, redraw, pickGene, drawH, transparentH, highlightedB, lineWH, nameH, colorH, metaButtonsH);
+            globalsVBox.getChildren().addAll(timeDiffH, widthH, heightH, nodeGapH, chromosomeGapH, lineGapH, lineSizeH, satH, briH,optH, nonhighlightedH, redraw, pickGene, drawH, transparentH, highlightedB, lineWH, nameH, colorH, metaButtonsH, showBoxesCB, showLeafNames);
 
 
 
