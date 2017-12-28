@@ -99,7 +99,7 @@ class EvolutionTree {
 
 
     void optimize() {
-        //TTODO run Setcover solver and apply result on gene settings , not all genes have gene meta in setting nede to get complete list of genes
+        //TODO run Setcover solver and apply result on gene settings , not all genes have gene meta in setting nede to get complete list of genes
         if (!optimized) {
             setCover();
         }
@@ -196,7 +196,7 @@ class EvolutionTree {
         }
 
         //just for copy
-        public EvolutionNode(String name, String id, EvolutionNode first, EvolutionNode second,
+        private EvolutionNode(String name, String id, EvolutionNode first, EvolutionNode second,
             String event, double time, ArrayList<Chromosome> chromosomes, ArrayList<Integer> allGenes,
             ArrayList<Integer> genePos, ArrayList<Integer> gene_x_pos, ArrayList<Integer> blockNumAncF,
             ArrayList<Integer> blockNumAncS, ArrayList<Integer> blockNumDes, HashMap<Integer, Integer> blockWidth,
@@ -405,23 +405,7 @@ class EvolutionTree {
     public void print(DrawFactory fac) {
         calcwidth(this.getRoot());
         fac.setLineWidth(Settings.line_size);
-
-        boolean containsName = false;
-        for(Integer a : this.getRoot().allGenes){
-            String name = Settings.gene_name(a);
-            if(name != null){
-                containsName = true;
-            }
-        }
-        if(containsName && (fac instanceof SVGDrawFactory)) fac.translateX(60);
-
         rek(this.getRoot(), 0, 0, 0, Settings.height, fac);
-
-        //vypisovanie mien genov
-        if(containsName && (fac instanceof SVGDrawFactory)){
-            fac.translateX(-60);
-            fac.writeGeneNames(this.getRoot().allGenes, this.getRoot().gene_x_pos);
-        }
     }
 
     private int calcwidth(EvolutionNode node) {
@@ -856,11 +840,9 @@ class EvolutionTree {
                     }
                     //rectangle sa bude kreslit v tomto ife
                     if(k==l && l!= node.allGenes.size() - 1){
-                        if(Settings.showBoxes) {
-                            fac.drawRectangle(line_x - Settings.line_gap, chromosomeStart - Settings.line_gap,
-                                line_x + Settings.line_gap, line_y + Settings.line_gap,
-                                node.chromosomes.get(m).isCircular);
-                        }
+                        fac.drawRectangle(line_x - Settings.line_gap, chromosomeStart - Settings.line_gap,
+                            line_x + Settings.line_gap, line_y + Settings.line_gap,
+                            node.chromosomes.get(m).isCircular);
                         line_y += Settings.line_gap + Settings.gene_width(node.allGenes.get(k))
                             + Settings.chromosome_gap;
                         chromosomeStart = line_y;
@@ -870,13 +852,11 @@ class EvolutionTree {
                 }
                 k++;
             }
-            if(Settings.showBoxes) {
-                fac.drawRectangle(line_x - Settings.line_gap,
-                    chromosomeStart - Settings.line_gap,
-                    line_x + Settings.line_gap,
-                    line_y - Settings.gene_width(node.allGenes.get(node.allGenes.size() - 1)),
-                    node.chromosomes.get(m).isCircular);
-            }
+            fac.drawRectangle(line_x - Settings.line_gap,
+                chromosomeStart - Settings.line_gap,
+                line_x + Settings.line_gap,
+                line_y - Settings.gene_width(node.allGenes.get(node.allGenes.size()-1)),
+                node.chromosomes.get(m).isCircular);
         } else {
             line_x = prev_x;
         }
@@ -898,13 +878,6 @@ class EvolutionTree {
             }
             line_y+= Settings.chromosome_gap;
         }
-
-        line_y -= Settings.chromosome_gap;
-        if(node.getFirst() == null && Settings.showLeafNames){
-            fac.writeLeafName(node.name, line_x,
-                line_y - node.calcNodeWidth() - Settings.line_gap);
-        }
-
         if (node.ancestorNum == 1) {
             rek(node.getFirst(), timedif_x, first_y, block_y, block_w, fac);
         } else if (node.ancestorNum == 2) {

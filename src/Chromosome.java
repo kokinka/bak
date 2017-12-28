@@ -8,20 +8,20 @@ class Chromosome {
 	double score = 0;
 	int relativeOrderID;
 
-	Chromosome(ArrayList<Integer> genes, boolean isCircular){
+	public Chromosome(ArrayList<Integer> genes, boolean isCircular){
 		this.genes = genes;
 		this.isCircular = isCircular;
 		this.genePos = new ArrayList<>();
 	}
 
 	//just for copy
-	Chromosome(ArrayList<Integer> genes, ArrayList<Integer> genePos, boolean isCircular){
+	private Chromosome(ArrayList<Integer> genes, ArrayList<Integer> genePos, boolean isCircular){
 		this.genes = genes;
 		this.genePos = genePos;
 		this.isCircular = isCircular;
 	}
 
-	Chromosome copy(){
+	public Chromosome copy(){
 		ArrayList<Integer> genes = new ArrayList<>();
 		genes.addAll(this.genes);
 		ArrayList<Integer> genePos = new ArrayList<>();
