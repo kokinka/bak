@@ -13,10 +13,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -29,6 +32,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -73,20 +77,26 @@ public class EHDraw extends Application {
 
 
         VBox controlsVBox = new VBox(10);
+        controlsVBox.setMinWidth(150);
+        controlsVBox.setPrefWidth(150);
         VBox globalsVBox = new VBox();
-        HBox root = new HBox(10);
+        globalsVBox.setMinWidth(350);
+        globalsVBox.setPrefWidth(350);
+        BorderPane root = new BorderPane();
+        controlsVBox.setStyle("-fx-background-color: white");
+        globalsVBox.setStyle("-fx-background-color: white");
 
         final Canvas cnv = new Canvas(Settings.width, Settings.height);
         ZoomablePane cnvPane = new ZoomablePane();
         cnvPane.getChildren().add(cnv);
 
-        root.getChildren().add(controlsVBox);
-        root.getChildren().add(cnvPane);
-        root.getChildren().add(globalsVBox);
+        root.setCenter(cnvPane);
+        root.setLeft(controlsVBox);
+        root.setRight(globalsVBox);
 
         Group group = new Group();
         group.getChildren().add(root);
-        Scene scene = new Scene(group, Settings.width + 400, Settings.height);
+        Scene scene = new Scene(group, Settings.width + 500, Settings.height);
 
         SceneGestures sceneGestures = new SceneGestures(cnvPane);
         scene.addEventFilter(MouseEvent.MOUSE_PRESSED, sceneGestures.getOnMousePressedEventHandler());
@@ -94,7 +104,12 @@ public class EHDraw extends Application {
         scene.addEventFilter(ScrollEvent.ANY, sceneGestures.getOnScrollEventHandler());
         primaryStage.setTitle(Settings.title);
         primaryStage.setScene(scene);
+
+        //pri resize, aby sa zmenil aj obsah (kvoli group sa nerobi automaticky)
+        root.prefHeightProperty().bind(primaryStage.getScene().heightProperty());
+        root.prefWidthProperty().bind(primaryStage.getScene().widthProperty());
         primaryStage.show();
+
         gc = cnv.getGraphicsContext2D();
 
 
