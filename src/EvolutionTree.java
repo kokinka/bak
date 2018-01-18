@@ -1,25 +1,20 @@
+import javafx.scene.paint.Color;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javafx.scene.paint.Color;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 /**
- *
  * @author user
  */
 class EvolutionTree {
@@ -37,6 +32,7 @@ class EvolutionTree {
     private boolean optimized;
     private TreeSet<Integer> solution;
     private Set<Integer> genes;
+    private int maxY = 0;
 
     public EvolutionTree() {
         this.root = null;
@@ -52,8 +48,8 @@ class EvolutionTree {
     }
 
     public EvolutionTree(EvolutionNode root, float scaleX, int diff_gen, boolean block_calced,
-        HashMap<Integer, Integer> block_cover, TreeSet<Integer> universe, HashMap<Integer, TreeSet<Integer>> sets,
-        boolean optimized, TreeSet<Integer> solution, Set<Integer> genes) {
+                         HashMap<Integer, Integer> block_cover, TreeSet<Integer> universe, HashMap<Integer, TreeSet<Integer>> sets,
+                         boolean optimized, TreeSet<Integer> solution, Set<Integer> genes) {
         this.root = root;
         this.scaleX = scaleX;
         this.diff_gen = diff_gen;
@@ -66,7 +62,7 @@ class EvolutionTree {
         this.genes = genes;
     }
 
-    public EvolutionTree copy(){
+    public EvolutionTree copy() {
         EvolutionNode root = this.root.copy();
         HashMap<String, EvolutionNode> map = new HashMap<>();
         map.putAll(this.map);
@@ -81,7 +77,7 @@ class EvolutionTree {
         Set<Integer> genes = new HashSet<>();
         genes.addAll(this.genes);
         return new EvolutionTree(root, this.scaleX, this.diff_gen, this.block_calced, block_cover, universe,
-            sets, this.optimized, solution, genes);
+                sets, this.optimized, solution, genes);
     }
 
 
@@ -181,7 +177,7 @@ class EvolutionTree {
             this.time = time;
             this.chromosomes = chromosomes;
             this.allGenes = new ArrayList<Integer>();
-            for(Chromosome ch: chromosomes){
+            for (Chromosome ch : chromosomes) {
                 allGenes.addAll(ch.genes);
             }
             this.genePos = genePos;
@@ -197,10 +193,10 @@ class EvolutionTree {
 
         //just for copy
         private EvolutionNode(String name, String id, EvolutionNode first, EvolutionNode second,
-            String event, double time, ArrayList<Chromosome> chromosomes, ArrayList<Integer> allGenes,
-            ArrayList<Integer> genePos, ArrayList<Integer> gene_x_pos, ArrayList<Integer> blockNumAncF,
-            ArrayList<Integer> blockNumAncS, ArrayList<Integer> blockNumDes, HashMap<Integer, Integer> blockWidth,
-            double next, int ancestorNum, int width){
+                              String event, double time, ArrayList<Chromosome> chromosomes, ArrayList<Integer> allGenes,
+                              ArrayList<Integer> genePos, ArrayList<Integer> gene_x_pos, ArrayList<Integer> blockNumAncF,
+                              ArrayList<Integer> blockNumAncS, ArrayList<Integer> blockNumDes, HashMap<Integer, Integer> blockWidth,
+                              double next, int ancestorNum, int width) {
             this.name = name;
             this.id = id;
             this.first = first;
@@ -220,13 +216,13 @@ class EvolutionTree {
             this.width = width;
         }
 
-        EvolutionNode copy(){
+        EvolutionNode copy() {
             EvolutionNode first = null;
             EvolutionNode second = null;
-            if(this.first != null) first = this.first.copy();
-            if(this.second != null) second = this.second.copy();
+            if (this.first != null) first = this.first.copy();
+            if (this.second != null) second = this.second.copy();
             ArrayList<Chromosome> chromosomes = new ArrayList<>();
-            for(Chromosome ch: this.chromosomes){
+            for (Chromosome ch : this.chromosomes) {
                 chromosomes.add(ch.copy());
             }
             ArrayList<Integer> allGenes = new ArrayList<>();
@@ -245,10 +241,10 @@ class EvolutionTree {
             blockWidth.putAll(this.blockWidth);
 
             EvolutionNode ancestor = new EvolutionNode(this.name, this.id, first, second, this.event,
-                this.time, chromosomes, allGenes, genePos, gene_x_pos, blockNumAncF, blockNumAncS,
-                blockNumDes, blockWidth, this.next, this.ancestorNum, this.width);
-            if(first != null) first.ancestor = ancestor;
-            if(second != null) second.ancestor = ancestor;
+                    this.time, chromosomes, allGenes, genePos, gene_x_pos, blockNumAncF, blockNumAncS,
+                    blockNumDes, blockWidth, this.next, this.ancestorNum, this.width);
+            if (first != null) first.ancestor = ancestor;
+            if (second != null) second.ancestor = ancestor;
 
             return ancestor;
         }
@@ -306,17 +302,17 @@ class EvolutionTree {
 
         public int calcNodeWidth() {
             int i = 0;
-            for(Chromosome ch: this.chromosomes){
-                for(Integer a: ch.genes) {
+            for (Chromosome ch : this.chromosomes) {
+                for (Integer a : ch.genes) {
                     if (Settings.is_draw(a)) {
-                        i = i + Settings.line_gap + Settings.gene_width(a);
+                        i = i + (int) Math.round(Settings.line_gap * Settings.scale) + Settings.gene_width(a);
                     }
                 }
-                i = i + Settings.chromosome_gap;
+                i = i + (int) Math.round(Settings.chromosome_gap * Settings.scale);
             }
             if (i > 0) {
-                i = i - Settings.line_gap;
-                i = i - Settings.chromosome_gap;
+                i = i - (int) Math.round(Settings.line_gap * Settings.scale);
+                i = i - (int) Math.round(Settings.chromosome_gap * Settings.scale);
             }
             return i;
         }
@@ -343,7 +339,7 @@ class EvolutionTree {
     }
 
     public void calcScale() {
-        Settings.scale_x = (Settings.width - 10) / this.scaleX;
+        Settings.scale_x = (Settings.width - 10) * Settings.scale / this.scaleX;
     }
 
     private void parse(String s) {
@@ -363,12 +359,12 @@ class EvolutionTree {
         ArrayList<Chromosome> chromosomes = new ArrayList<>();
         int i = 5;
         boolean hasChromosomes = false;
-        while(!splitted[i].equals("#")){
-            if(splitted[i].equals("$")){
+        while (!splitted[i].equals("#")) {
+            if (splitted[i].equals("$")) {
                 hasChromosomes = true;
                 chromosomes.add(new Chromosome(genes, false));
                 genes = new ArrayList<>();
-            } else if(splitted[i].equals("@")){
+            } else if (splitted[i].equals("@")) {
                 hasChromosomes = true;
                 chromosomes.add(new Chromosome(genes, true));
                 genes = new ArrayList<>();
@@ -378,14 +374,14 @@ class EvolutionTree {
             }
             i++;
         }
-        if(!hasChromosomes) chromosomes.add(new Chromosome(genes, false));
+        if (!hasChromosomes) chromosomes.add(new Chromosome(genes, false));
 
         ArrayList<Integer> geneorder = new ArrayList<>();
         int k = 0;
         int counter = chromosomes.get(0).genes.size();
         int which_ch = 0;
         for (int j = i + 1; j < splitted.length; j++) {
-            if(k == counter){
+            if (k == counter) {
                 which_ch++;
                 counter += chromosomes.get(which_ch).genes.size();
             }
@@ -491,7 +487,7 @@ class EvolutionTree {
         }
 
         //des blocks , , new part start
-        j =0;
+        j = 0;
         while (j < des.blockNumDes.size() - 1) {
             int first = des.blockNumDes.get(j);
             int second = des.blockNumDes.get(j + 1);
@@ -658,25 +654,25 @@ class EvolutionTree {
     public void exportCrossingsNode(BufferedWriter bw, EvolutionNode node) throws IOException {
         String line = "";
         line += node.name + " " + node.id + " ";
-        if(node.ancestor == null) line += "root ";
+        if (node.ancestor == null) line += "root ";
         else line += node.ancestor.id + " ";
         line += node.time + " " + node.event + " ";
-        for(Chromosome ch : node.chromosomes){
-            for (Integer gene: ch.genes){
+        for (Chromosome ch : node.chromosomes) {
+            for (Integer gene : ch.genes) {
                 line += gene + " ";
             }
-            if(ch.isCircular) line += "@ ";
+            if (ch.isCircular) line += "@ ";
             else line += "$ ";
 
         }
         line += "# ";
-        for (Integer pos: node.genePos){
-                line += pos + " ";
+        for (Integer pos : node.genePos) {
+            line += pos + " ";
         }
         bw.write(line);
         bw.newLine();
-        if(node.getFirst() != null) exportCrossingsNode(bw, node.getFirst());
-        if(node.getSecond()!= null) exportCrossingsNode(bw, node.getSecond());
+        if (node.getFirst() != null) exportCrossingsNode(bw, node.getFirst());
+        if (node.getSecond() != null) exportCrossingsNode(bw, node.getSecond());
     }
 
     private void rekBlok(EvolutionNode node) {
@@ -695,7 +691,7 @@ class EvolutionTree {
     }
 
     private void setCover() {
-                this.optimized = true;
+        this.optimized = true;
         if (!this.block_calced) {
             //treba zacinat aspon na jednotke,inak je neznama orientacia blokov
             this.findBlocks();
@@ -824,39 +820,41 @@ class EvolutionTree {
         timedif_x = (int) (Math.max(node.next - Settings.time_diff, node.time) * Settings.scale_x);
         if (!node.event.equals("root")) {
             int chromosomeDiff = node.chromosomes.size() - node.ancestor.chromosomes.size();
-            if(chromosomeDiff == 0) {
+            if (chromosomeDiff == 0) {
                 line_y = first_y;
             } else {
-                line_y = first_y - ((1/2) * chromosomeDiff * Settings.chromosome_gap);
+                line_y = first_y - ((1 / 2) * chromosomeDiff * (int) Math.round(Settings.chromosome_gap * Settings.scale));
             }
-	        int k = 0;
-	        int l = node.chromosomes.get(0).genes.size() -1; //dalsi koniec chromozomu
-	        int m = 0; //na ktorom sme chromozome
+            if (line_y > maxY) maxY = line_y;
+            int k = 0;
+            int l = node.chromosomes.get(0).genes.size() - 1; //dalsi koniec chromozomu
+            int m = 0; //na ktorom sme chromozome
             double chromosomeStart = line_y;
-	        for (int a : node.genePos) {
-		        if (Settings.is_draw(node.allGenes.get(k))) {
+            for (int a : node.genePos) {
+                if (Settings.is_draw(node.allGenes.get(k))) {
                     if (a != -1) {
                         fac.drawGeneLine(prev_x, node.ancestor.gene_x_pos.get(a), line_x, line_y, node.allGenes.get(k));
                     }
                     //rectangle sa bude kreslit v tomto ife
-                    if(k==l && l!= node.allGenes.size() - 1){
-                        fac.drawRectangle(line_x - Settings.line_gap, chromosomeStart - Settings.line_gap,
-                            line_x + Settings.line_gap, line_y + Settings.line_gap,
-                            node.chromosomes.get(m).isCircular);
-                        line_y += Settings.line_gap + Settings.gene_width(node.allGenes.get(k))
-                            + Settings.chromosome_gap;
+                    if (k == l && l != node.allGenes.size() - 1) {
+                        fac.drawRectangle(line_x - (int) Math.round(Settings.line_gap * Settings.scale), chromosomeStart - (int) Math.round(Settings.line_gap * Settings.scale),
+                                line_x + (int) Math.round(Settings.line_gap * Settings.scale), line_y + (int) Math.round(Settings.line_gap * Settings.scale),
+                                node.chromosomes.get(m).isCircular);
+                        line_y += (int) Math.round(Settings.line_gap * Settings.scale) + Settings.gene_width(node.allGenes.get(k))
+                                + (int) Math.round(Settings.chromosome_gap * Settings.scale);
                         chromosomeStart = line_y;
                         m++;
                         l += node.chromosomes.get(m).genes.size();
-                    } else line_y += Settings.line_gap + Settings.gene_width(node.allGenes.get(k));
+                    } else
+                        line_y += (int) Math.round(Settings.line_gap * Settings.scale) + Settings.gene_width(node.allGenes.get(k));
                 }
                 k++;
             }
-            fac.drawRectangle(line_x - Settings.line_gap,
-                chromosomeStart - Settings.line_gap,
-                line_x + Settings.line_gap,
-                line_y - Settings.gene_width(node.allGenes.get(node.allGenes.size()-1)),
-                node.chromosomes.get(m).isCircular);
+            fac.drawRectangle(line_x - (int) Math.round(Settings.line_gap * Settings.scale),
+                    chromosomeStart - (int) Math.round(Settings.line_gap * Settings.scale),
+                    line_x + (int) Math.round(Settings.line_gap * Settings.scale),
+                    line_y - Settings.gene_width(node.allGenes.get(node.allGenes.size() - 1)),
+                    node.chromosomes.get(m).isCircular);
         } else {
             line_x = prev_x;
         }
@@ -865,18 +863,18 @@ class EvolutionTree {
             chromosomeDiff = node.chromosomes.size() - node.ancestor.chromosomes.size();
         }
 
-        line_y = first_y - ((1/2) * chromosomeDiff * Settings.chromosome_gap);
+        line_y = first_y - ((1 / 2) * chromosomeDiff * (int) Math.round(Settings.chromosome_gap * Settings.scale));
 
-        for(Chromosome ch: node.chromosomes) {
+        for (Chromosome ch : node.chromosomes) {
             for (Integer a : ch.genes) {
                 //fac.setLineColor(this.gene_col[Math.abs(a)]);
                 node.gene_x_pos.add(line_y);
                 if (Settings.is_draw(a)) {
                     fac.drawGeneLine(line_x, line_y, timedif_x, line_y, a);
-                    line_y += Settings.line_gap + Settings.gene_width(a);
+                    line_y += (int) Math.round(Settings.line_gap * Settings.scale) + Settings.gene_width(a);
                 }
             }
-            line_y+= Settings.chromosome_gap;
+            line_y += (int) Math.round(Settings.chromosome_gap * Settings.scale);
         }
         if (node.ancestorNum == 1) {
             rek(node.getFirst(), timedif_x, first_y, block_y, block_w, fac);
@@ -889,26 +887,26 @@ class EvolutionTree {
         }
     }
 
-    int which_chromosome(EvolutionNode node, int pos){
-        if(pos == -1) return pos;
+    int which_chromosome(EvolutionNode node, int pos) {
+        if (pos == -1) return pos;
         int which = -1;
         int counter = node.chromosomes.get(0).genes.size();
         for (int i = 0; i < node.chromosomes.size(); i++) {
             which++;
-            if(pos < counter) return which;
-            counter += node.chromosomes.get(i+1).genes.size();
+            if (pos < counter) return which;
+            counter += node.chromosomes.get(i + 1).genes.size();
         }
         return which;
     }
 
-    private int getNewPos(int oldPos, int beforeId, int afterId, EvolutionNode node){
-        if(oldPos == -1) return -1;
+    private int getNewPos(int oldPos, int beforeId, int afterId, EvolutionNode node) {
+        if (oldPos == -1) return -1;
         int result = oldPos;
         for (int i = 0; i < node.chromosomes.size(); i++) {
-            if(node.chromosomes.get(i).relativeOrderID < beforeId){
+            if (node.chromosomes.get(i).relativeOrderID < beforeId) {
                 result -= node.chromosomes.get(i).genePos.size();
             }
-            if(i < afterId) result += node.chromosomes.get(i).genePos.size();
+            if (i < afterId) result += node.chromosomes.get(i).genePos.size();
         }
         return result;
     }
@@ -920,16 +918,16 @@ class EvolutionTree {
         int which_ch = 0;
         ArrayList<Integer> newChromosomeGenePos = new ArrayList<>();
         for (int i = 0; i < node1.genePos.size(); i++) {
-            if(i == counter){
+            if (i == counter) {
                 node1.chromosomes.get(which_ch).genePos = newChromosomeGenePos;
                 newChromosomeGenePos = new ArrayList<>();
                 which_ch++;
-                counter+=node1.chromosomes.get(which_ch).genePos.size();
+                counter += node1.chromosomes.get(which_ch).genePos.size();
             }
             int beforeId = relativeChromosomesPos.get(i);
             int afterId = -1;
             for (int j = 0; j < node2.chromosomes.size(); j++) {
-                if(node2.chromosomes.get(j).relativeOrderID == beforeId){
+                if (node2.chromosomes.get(j).relativeOrderID == beforeId) {
                     afterId = j;
                     break;
                 }
@@ -942,8 +940,8 @@ class EvolutionTree {
         node1.genePos = newGenePos;
     }
 
-    private void oneSidedOpt(Set<EvolutionNode> stableNodeSet, EvolutionNode unstableNode, boolean isBackwards){
-        if(!isBackwards) {
+    private void oneSidedOpt(Set<EvolutionNode> stableNodeSet, EvolutionNode unstableNode, boolean isBackwards) {
+        if (!isBackwards) {
             for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
                 if (stableNodeSet == null) otocChromozomVKoreni(unstableNode, i);
                 else {
@@ -954,7 +952,7 @@ class EvolutionTree {
             }
         }
 
-        if(stableNodeSet == null) return;
+        if (stableNodeSet == null) return;
 
         // zoznam id genov z druheho nodu(nodov), s ktorymi je chromozom spojeny, vyuzijeme v barycentrovej heuristike
         ArrayList<ArrayList<Integer>> geneConnection = new ArrayList<>();
@@ -966,7 +964,7 @@ class EvolutionTree {
         ArrayList<Integer> relativeChromosomesPos1 = new ArrayList<>();
         ArrayList<Integer> relativeChromosomesPos2 = new ArrayList<>();
         // v tejto casti vytvaram arraylist geneConnection a pole relativeCh pre oba pripady dopredu, dozadu
-        if(!isBackwards) {
+        if (!isBackwards) {
             if (unstableNode.getFirst() != null) {
                 for (int i = 0; i < unstableNode.getFirst().genePos.size(); i++) {
                     relativeChromosomesPos1.add(which_chromosome(unstableNode, unstableNode.getFirst().genePos.get(i)));
@@ -987,15 +985,15 @@ class EvolutionTree {
             for (int i = 0; i < unstableNode.getFirst().genePos.size(); i++) {
                 int which_ch = which_chromosome(unstableNode, unstableNode.getFirst().genePos.get(i));
                 relativeChromosomesPos1.add(which_ch);
-                if(which_ch != -1) {
+                if (which_ch != -1) {
                     geneConnection.get(which_ch).add(i);
                 }
             }
-            if(stableNodeSet.size() == 2){
+            if (stableNodeSet.size() == 2) {
                 for (int i = 0; i < unstableNode.getSecond().genePos.size(); i++) {
                     int which_ch = which_chromosome(unstableNode, unstableNode.getSecond().genePos.get(i));
                     relativeChromosomesPos2.add(which_ch);
-                    if(which_ch != -1) {
+                    if (which_ch != -1) {
                         geneConnection.get(which_ch).add(i);
                     }
                 }
@@ -1004,8 +1002,8 @@ class EvolutionTree {
 
         //pocitanie score pre chromozomy v node
         for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
-            for(Integer j : geneConnection.get(i)){
-                unstableNode.chromosomes.get(i).score += j+1;
+            for (Integer j : geneConnection.get(i)) {
+                unstableNode.chromosomes.get(i).score += j + 1;
             }
             unstableNode.chromosomes.get(i).score /= geneConnection.get(i).size();
         }
@@ -1017,8 +1015,8 @@ class EvolutionTree {
 
         //sortovanie chromozomov v node
         (unstableNode.chromosomes).sort((o1, o2) -> {
-            if(o1.score > o2.score) return 1;
-            if(o1.score < o2.score) return -1;
+            if (o1.score > o2.score) return 1;
+            if (o1.score < o2.score) return -1;
             return 0;
         });
 
@@ -1029,15 +1027,15 @@ class EvolutionTree {
     private ArrayList<Integer> rezatAOtocit(Chromosome ch, EvolutionNode ancestor) {
         ArrayList<Integer> vysledokOtocenia = chcemOtacatOpt(ch, ancestor);
         ArrayList<Integer> result = new ArrayList<>();
-        if(!ch.isCircular){
+        if (!ch.isCircular) {
             result.add(0);
-            if(vysledokOtocenia.get(0) == 1) result.add(1);
+            if (vysledokOtocenia.get(0) == 1) result.add(1);
             else result.add(0);
             return result;
         }
         int najuspesnejsiRez = 0;
         boolean chcemOtocit;
-        if(vysledokOtocenia.get(0) == 1) {
+        if (vysledokOtocenia.get(0) == 1) {
             chcemOtocit = true;
         } else chcemOtocit = false;
         int minPocetKrizeni = vysledokOtocenia.get(1);
@@ -1060,24 +1058,24 @@ class EvolutionTree {
             if (pocetKrizeni < minPocetKrizeni) {
                 minPocetKrizeni = pocetKrizeni;
                 najuspesnejsiRez = rez;
-                if(vysledokOtocenia.get(0) == 1) {
+                if (vysledokOtocenia.get(0) == 1) {
                     chcemOtocit = true;
                 } else chcemOtocit = false;
             }
         }
 
         result.add(najuspesnejsiRez);
-        if(chcemOtocit) result.add(1);
+        if (chcemOtocit) result.add(1);
         else result.add(0);
         return result;
     }
 
     private int spocitajKrizeniaPreChromozom(ArrayList<Integer> genePos) {
         int crossings = 0;
-        for(int j = 0; j < genePos.size(); j++){
-            for (int i = j+1; i < genePos.size(); i++) {
-                if(genePos.get(i) == -1) continue;
-                if(genePos.get(i) < genePos.get(j)) crossings++;
+        for (int j = 0; j < genePos.size(); j++) {
+            for (int i = j + 1; i < genePos.size(); i++) {
+                if (genePos.get(i) == -1) continue;
+                if (genePos.get(i) < genePos.get(j)) crossings++;
             }
         }
         return crossings;
@@ -1089,30 +1087,30 @@ class EvolutionTree {
         ArrayList<Integer> newGenePos = new ArrayList<>();
         ArrayList<Integer> newGenes = new ArrayList<>();
 
-        for (int i = ch.genePos.size() -1; i >= 0; i--) {
-            if(ch.genePos.get(i) != -1) {
+        for (int i = ch.genePos.size() - 1; i >= 0; i--) {
+            if (ch.genePos.get(i) != -1) {
                 int ancestorGene = ancestor.allGenes.get(ch.genePos.get(i));
                 if ((ancestorGene >= 0 && ch.genes.get(i) < 0)
-                    || (ancestorGene < 0 && ch.genes.get(i) >= 0)
-                    ) myCrossings1++;
+                        || (ancestorGene < 0 && ch.genes.get(i) >= 0)
+                        ) myCrossings1++;
             }
-            if(ch.genes.get(i) < 0) myCrossings1++;
+            if (ch.genes.get(i) < 0) myCrossings1++;
             newGenePos.add(ch.genePos.get(i));
             newGenes.add(ch.genes.get(i) * (-1));
         }
         int myCrossings2 = spocitajKrizeniaPreChromozom(newGenePos);
-        for (int i = ch.genePos.size() -1; i >= 0; i--) {
-            if(newGenePos.get(i) != -1) {
+        for (int i = ch.genePos.size() - 1; i >= 0; i--) {
+            if (newGenePos.get(i) != -1) {
                 int ancestorGene = ancestor.allGenes.get(newGenePos.get(i));
                 if ((ancestorGene >= 0 && newGenes.get(i) < 0)
-                    || (ancestorGene < 0 && newGenes.get(i) >= 0)
-                    ) myCrossings2++;
+                        || (ancestorGene < 0 && newGenes.get(i) >= 0)
+                        ) myCrossings2++;
             }
-            if(newGenes.get(i) < 0) myCrossings2++;
+            if (newGenes.get(i) < 0) myCrossings2++;
         }
 
         ArrayList<Integer> result = new ArrayList<>();
-        if(myCrossings1 > myCrossings2){
+        if (myCrossings1 > myCrossings2) {
             result.add(1);
             result.add(myCrossings2);
         } else {
@@ -1123,29 +1121,29 @@ class EvolutionTree {
         return result;
     }
 
-    private void otocChromozomVKoreni(EvolutionNode node, int ktory){
+    private void otocChromozomVKoreni(EvolutionNode node, int ktory) {
         int reverseGenes = 0;
         Chromosome ch = node.chromosomes.get(ktory);
         for (int i = 0; i < ch.genes.size(); i++) {
-            if(ch.genes.get(i) < 0){
+            if (ch.genes.get(i) < 0) {
                 reverseGenes++;
             }
         }
-        if(reverseGenes > ch.genes.size()/2) otoc(node, ktory);
+        if (reverseGenes > ch.genes.size() / 2) otoc(node, ktory);
     }
 
     void normalizeNode(EvolutionNode unstableNode, ArrayList<Integer> relativeChromosomesPos1, ArrayList<Integer> relativeChromosomesPos2) {
         // najdenie noveho genePos pre nasledovnikov node2
-        if(unstableNode.getFirst()!= null) {
+        if (unstableNode.getFirst() != null) {
             changeGenePos(unstableNode.getFirst(), unstableNode, relativeChromosomesPos1);
         }
-        if(unstableNode.getSecond()!= null) {
+        if (unstableNode.getSecond() != null) {
             changeGenePos(unstableNode.getSecond(), unstableNode, relativeChromosomesPos2);
         }
         // uz len oprava arraylistov allGenes a genePos + vynulovanie skore pre node2
         ArrayList<Integer> newAllGenes = new ArrayList<>();
         ArrayList<Integer> newGenePos = new ArrayList<>();
-        for(Chromosome ch: unstableNode.chromosomes){
+        for (Chromosome ch : unstableNode.chromosomes) {
             newAllGenes.addAll(ch.genes);
             newGenePos.addAll(ch.genePos);
             ch.score = 0;
@@ -1154,19 +1152,19 @@ class EvolutionTree {
         unstableNode.genePos = newGenePos;
     }
 
-    EvolutionTree level_by_level_sweep(){
-        if(this.getRoot() == null) return null;
+    EvolutionTree level_by_level_sweep() {
+        if (this.getRoot() == null) return null;
         int counter = 0;
         int bestCrossings = countCrossings(this.getRoot());
         System.out.println(bestCrossings);
         EvolutionTree bestTree = this.copy();
         int lastCrossingNumber = Integer.MAX_VALUE;
-        while(!(counter == 5)){
+        while (!(counter == 5)) {
             optimalizuj(this.getRoot());
             int crossingNumber = countCrossings(this.getRoot());
-            if(crossingNumber == lastCrossingNumber) break;
-            if(crossingNumber > lastCrossingNumber) counter++;
-            if(crossingNumber < bestCrossings){
+            if (crossingNumber == lastCrossingNumber) break;
+            if (crossingNumber > lastCrossingNumber) counter++;
+            if (crossingNumber < bestCrossings) {
                 bestCrossings = crossingNumber;
                 bestTree = this.copy();
             }
@@ -1200,7 +1198,7 @@ class EvolutionTree {
         int sum = 0;
         if (node.getFirst() != null) {
             sum = countCrossings2Layers(node, node.getFirst()) + countCrossings(node.getFirst());
-            if(node.getSecond() != null) {
+            if (node.getSecond() != null) {
                 sum += countCrossings2Layers(node, node.getSecond()) + countCrossings(node.getSecond());
             }
         }
@@ -1212,31 +1210,31 @@ class EvolutionTree {
         int crossings = 0;
         for (int i = 0; i < node2.genePos.size(); i++) {
             int from = node2.genePos.get(i);
-            if(from!= -1) {
+            if (from != -1) {
                 int geneFrom = node1.allGenes.get(from);
                 int geneTo = node2.allGenes.get(i);
                 //ak nastala zmena orientacie, tiez sa to berie ako crossing
                 if ((geneFrom < 0 && geneTo > 0) || (geneFrom > 0 && geneTo < 0)) {
                     crossings++;
                 }
-                if(geneFrom < 0 && node1.event.equals("root")) crossings++;
+                if (geneFrom < 0 && node1.event.equals("root")) crossings++;
             }
-            if(node2.allGenes.get(i) < 0) crossings++;
-            for (int j = i+1; j < node2.genePos.size(); j++){
+            if (node2.allGenes.get(i) < 0) crossings++;
+            for (int j = i + 1; j < node2.genePos.size(); j++) {
                 int newFrom = node2.genePos.get(j);
-                if(newFrom != -1 && newFrom < from) crossings++;
+                if (newFrom != -1 && newFrom < from) crossings++;
             }
         }
         return crossings;
     }
 
-    void otoc(EvolutionTree.EvolutionNode node, int ktory){
+    void otoc(EvolutionTree.EvolutionNode node, int ktory) {
         ArrayList<Integer> newChromosomeGenePos = new ArrayList<>();
         ArrayList<Integer> newChromosomeGenes = new ArrayList<>();
         Chromosome ch = node.chromosomes.get(ktory);
-        for (int i = ch.genePos.size() -1; i >= 0; i--) {
+        for (int i = ch.genePos.size() - 1; i >= 0; i--) {
             newChromosomeGenePos.add(ch.genePos.get(i));
-            newChromosomeGenes.add(ch.genes.get(i)*(-1));
+            newChromosomeGenes.add(ch.genes.get(i) * (-1));
         }
         int fromId = 0;
         for (int i = 0; i < ktory; i++) {
@@ -1250,7 +1248,7 @@ class EvolutionTree {
         ArrayList<Integer> newAllGenes = new ArrayList<>();
         ArrayList<Integer> newGenePos = new ArrayList<>();
         for (int i = 0; i < node.chromosomes.size(); i++) {
-            if(i == ktory){
+            if (i == ktory) {
                 ch.genePos = newChromosomeGenePos;
                 ch.genes = newChromosomeGenes;
             }
@@ -1261,22 +1259,22 @@ class EvolutionTree {
         node.genePos = newGenePos;
     }
 
-    private void zmenGenePosPoOtacani(EvolutionTree.EvolutionNode node, int fromId, int toId){
-        if(node == null) return;
+    private void zmenGenePosPoOtacani(EvolutionTree.EvolutionNode node, int fromId, int toId) {
+        if (node == null) return;
 
         ArrayList<Integer> newGenePos = new ArrayList<>();
         int counter = node.chromosomes.get(0).genePos.size();
         int which_ch = 0;
         ArrayList<Integer> newChromosomeGenePos = new ArrayList<>();
         for (int i = 0; i < node.genePos.size(); i++) {
-            if(i == counter){
+            if (i == counter) {
                 node.chromosomes.get(which_ch).genePos = newChromosomeGenePos;
                 newChromosomeGenePos = new ArrayList<>();
                 which_ch++;
                 counter += node.chromosomes.get(which_ch).genePos.size();
             }
 
-            if(node.genePos.get(i) >= fromId && node.genePos.get(i) <= toId){
+            if (node.genePos.get(i) >= fromId && node.genePos.get(i) <= toId) {
                 int newPos = toId - node.genePos.get(i) + fromId;
                 newGenePos.add(newPos);
                 newChromosomeGenePos.add(newPos);
@@ -1289,9 +1287,9 @@ class EvolutionTree {
         node.genePos = newGenePos;
     }
 
-    void rez(EvolutionTree.EvolutionNode node, int ktory, int kde){
-        if(!node.chromosomes.get(ktory).isCircular) return;
-        if(kde == 0) return;
+    void rez(EvolutionTree.EvolutionNode node, int ktory, int kde) {
+        if (!node.chromosomes.get(ktory).isCircular) return;
+        if (kde == 0) return;
 
         ArrayList<Integer> newChromosomeGenePos = new ArrayList<>();
         ArrayList<Integer> newChromosomeGenes = new ArrayList<>();
@@ -1317,7 +1315,7 @@ class EvolutionTree {
         ArrayList<Integer> newAllGenes = new ArrayList<>();
         ArrayList<Integer> newGenePos = new ArrayList<>();
         for (int i = 0; i < node.chromosomes.size(); i++) {
-            if(i == ktory){
+            if (i == ktory) {
                 ch.genePos = newChromosomeGenePos;
                 ch.genes = newChromosomeGenes;
             }
@@ -1329,25 +1327,25 @@ class EvolutionTree {
     }
 
     private void zmenGenePosPoRezani(EvolutionTree.EvolutionNode node, int fromId, int toId, int kde) {
-        if(node == null) return;
+        if (node == null) return;
 
         ArrayList<Integer> newGenePos = new ArrayList<>();
         int counter = node.chromosomes.get(0).genePos.size();
         int which_ch = 0;
         ArrayList<Integer> newChromosomeGenePos = new ArrayList<>();
         for (int i = 0; i < node.genePos.size(); i++) {
-            if(i == counter){
+            if (i == counter) {
                 node.chromosomes.get(which_ch).genePos = newChromosomeGenePos;
                 newChromosomeGenePos = new ArrayList<>();
                 which_ch++;
                 counter += node.chromosomes.get(which_ch).genePos.size();
             }
 
-            if(node.genePos.get(i) >= fromId && node.genePos.get(i) < fromId + kde) {
+            if (node.genePos.get(i) >= fromId && node.genePos.get(i) < fromId + kde) {
                 int newPos = node.genePos.get(i) + (toId - fromId - kde + 1);
                 newGenePos.add(newPos);
                 newChromosomeGenePos.add(newPos);
-            } else if(node.genePos.get(i) >= (fromId + kde) && node.genePos.get(i) <= toId){
+            } else if (node.genePos.get(i) >= (fromId + kde) && node.genePos.get(i) <= toId) {
                 int newPos = node.genePos.get(i) - kde;
                 newGenePos.add(newPos);
                 newChromosomeGenePos.add(newPos);
@@ -1358,5 +1356,11 @@ class EvolutionTree {
         }
         node.chromosomes.get(node.chromosomes.size() - 1).genePos = newChromosomeGenePos;
         node.genePos = newGenePos;
+    }
+
+    public void calcRealHeight() {
+        calcwidth(this.getRoot());
+        rek(this.getRoot(), 0, 0, 0, Settings.height, new NoDrawFactory());
+        Settings.real_height = maxY + (int) Math.round(500 * Settings.scale);
     }
 }

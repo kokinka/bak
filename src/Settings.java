@@ -49,6 +49,8 @@ class Settings {
     public static double time_diff = 0.3;
     public static int width = 800;
     public static int height = 800;
+    public static int real_height = 800;
+    public static double scale = 1;
     public static int line_gap = 8;
     public static int line_size = 2;
     public static int node_gap = 20;
@@ -65,8 +67,6 @@ class Settings {
     static public boolean default_highlighted =true;
     /*private*/ static TreeMap<Integer, GeneMeta> gene_meta = new TreeMap<Integer, GeneMeta>();
     static Paint nonhighlighted = Color.LIGHTGRAY;
-    public static boolean showBoxes = true;
-    public static boolean showLeafNames = true;
 
     private static List<Integer> genes;
 
@@ -193,16 +193,6 @@ class Settings {
         non_highlighted.appendChild(text_nonhighlighted);
         settings.appendChild(non_highlighted);
 
-        Element showBoxes = dom.createElement("ShowChromosomeBoxes");
-        Text text_showBoxes = dom.createTextNode(""+Settings.showBoxes);
-        showBoxes.appendChild(text_showBoxes);
-        settings.appendChild(showBoxes);
-
-        Element showLeafNames = dom.createElement("ShowLeafNames");
-        Text text_showLeafNames = dom.createTextNode(""+Settings.showLeafNames);
-        showLeafNames.appendChild(text_showLeafNames);
-        settings.appendChild(showLeafNames);
-
         return settings;
     }
 
@@ -256,12 +246,7 @@ class Settings {
                 case "Nonhighlighted":
                         Settings.nonhighlighted = Paint.valueOf(process.getTextContent());
                         break;
-                case "ShowChromosomeBoxes":
-                    Settings.showBoxes = Boolean.parseBoolean(process.getTextContent());
-                    break;
-                case "ShowLeafNames":
-                    Settings.showLeafNames = Boolean.parseBoolean(process.getTextContent());
-                    break;
+
             }
         }
     }

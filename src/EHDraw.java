@@ -4,40 +4,30 @@
  * and open the template in the editor.
  */
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
-import javafx.geometry.Pos;
+import javafx.geometry.HPos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Button;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+
+import java.io.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class EHDraw extends Application {
 
@@ -75,83 +65,150 @@ public class EHDraw extends Application {
     public void start(Stage _primaryStage) throws FileNotFoundException, IOException {
         primaryStage = _primaryStage;
 
-
-        VBox controlsVBox = new VBox(10);
-        controlsVBox.setMinWidth(150);
-        controlsVBox.setPrefWidth(150);
-        VBox globalsVBox = new VBox();
-        globalsVBox.setMinWidth(350);
-        globalsVBox.setPrefWidth(350);
         BorderPane root = new BorderPane();
-        controlsVBox.setStyle("-fx-background-color: white");
-        globalsVBox.setStyle("-fx-background-color: white");
-
         final Canvas cnv = new Canvas(Settings.width, Settings.height);
-        ZoomablePane cnvPane = new ZoomablePane();
+        Pane cnvPane = new Pane();
         cnvPane.getChildren().add(cnv);
 
+        MenuBar menuBar = new MenuBar();
+        Menu fileMenu = new Menu("File");
+        Menu settingsMenu = new Menu("Settings");
+        menuBar.getMenus().addAll(fileMenu, settingsMenu);
+
         root.setCenter(cnvPane);
-        root.setLeft(controlsVBox);
-        root.setRight(globalsVBox);
+        root.setTop(menuBar);
 
         Group group = new Group();
-        group.getChildren().add(root);
-        Scene scene = new Scene(group, Settings.width + 500, Settings.height);
 
-        SceneGestures sceneGestures = new SceneGestures(cnvPane);
+        StackPane pane = new StackPane();
+        Canvas canvas = new Canvas(Settings.width, Settings.height);
+        pane.getChildren().add(canvas);
+        pane.getChildren().add(root);
+        group.getChildren().add(pane);
+        Scene scene = new Scene(group, Settings.width, Settings.height);
+
+        SceneGestures sceneGestures = new SceneGestures(canvas);
         scene.addEventFilter(MouseEvent.MOUSE_PRESSED, sceneGestures.getOnMousePressedEventHandler());
         scene.addEventFilter(MouseEvent.MOUSE_DRAGGED, sceneGestures.getOnMouseDraggedEventHandler());
-        scene.addEventFilter(ScrollEvent.ANY, sceneGestures.getOnScrollEventHandler());
+        scene.addEventFilter(ScrollEvent.ANY, new EventHandler<ScrollEvent>() {
+            @Override
+            public void handle(ScrollEvent event) {
+                double delta = 1.1;
+                double min_scale = 0.1;
+                double max_scale = 4;
+
+                if (event.getDeltaY() < 0) {
+                    Settings.scale = Math.max(Settings.scale / delta, min_scale);
+                } else {
+                    Settings.scale = Math.min(Settings.scale * delta, max_scale);
+
+                }
+                canvas.setWidth(Settings.width * Settings.scale);
+                strom.calcScale();
+                strom.calcRealHeight();
+                System.out.println(Settings.real_height);
+                canvas.setHeight(Settings.real_height);
+                draw();
+                event.consume();
+            }
+        });
+        scene.widthProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observableValue, Number oldSceneWidth, Number newSceneWidth) {
+                Settings.width = newSceneWidth.intValue();
+                cnv.setWidth(Settings.width);
+                canvas.setWidth(Settings.width);
+                stromRedraw(canvas);
+            }
+        });
+        scene.heightProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observableValue, Number oldSceneHeight, Number newSceneHeight) {
+                Settings.height = newSceneHeight.intValue();
+                cnv.setHeight(Settings.height);
+                canvas.setHeight(Settings.height);
+                stromRedraw(canvas);
+            }
+        });
         primaryStage.setTitle(Settings.title);
         primaryStage.setScene(scene);
 
-        //pri resize, aby sa zmenil aj obsah (kvoli group sa nerobi automaticky)
-        root.prefHeightProperty().bind(primaryStage.getScene().heightProperty());
-        root.prefWidthProperty().bind(primaryStage.getScene().widthProperty());
         primaryStage.show();
 
-        gc = cnv.getGraphicsContext2D();
+        gc = canvas.getGraphicsContext2D();
 
 
-        Button openButton = new Button("Open");
-        Button optimizeButton = new Button("Optimize");
-        Button exportILPButton = new Button("Export ILP");
-        Button importILPButton = new Button("Import ILP");
-        Button saveIMGButton = new Button("Save Img");
-        Button importSettingsButton = new Button("Import Settings");
-        Button exportSettingsButton = new Button("Export Settings");
-        Button redrawButton = new Button("Redraw");
-        Button crossingsButton = new Button("Minimize crossings");
-        Button exportHistoryButton = new Button("Export history");
+        MenuItem openItem = new MenuItem("Open");
+        MenuItem optimizeItem = new MenuItem("Optimize");
+        MenuItem exportILPItem = new MenuItem("Export ILP");
+        MenuItem importILPItem = new MenuItem("Import ILP");
+        MenuItem saveIMGItem = new MenuItem("Save Image");
+        MenuItem redrawItem = new MenuItem("Redraw");
+        MenuItem crossingItem = new MenuItem("Minimize Crossing");
+        MenuItem exportHistoryItem = new MenuItem("Export History");
+        fileMenu.getItems().addAll(openItem, saveIMGItem, optimizeItem, exportILPItem,
+                importILPItem, redrawItem, crossingItem, exportHistoryItem);
 
-        openButton.setOnAction(new OpenButtonHandler(primaryStage));
-        optimizeButton.setOnAction(new OptimizeButtonHandler());
-        saveIMGButton.setOnAction(new SaveImgButtonHandler());
-        redrawButton.setOnAction(new redrawButtonHandler());
-        importSettingsButton.setOnAction(new importSettingsButtonHandler());
-        exportSettingsButton.setOnAction(new exportSettingsButtonHandler());
-        exportILPButton.setOnAction(new exportILPButtonHandler());
-        importILPButton.setOnAction(new importILPButtonHandler());
-        crossingsButton.setOnAction(new CrossingsButtonHandler());
-        exportHistoryButton.setOnAction(new ExportHistory());
+        openItem.setOnAction(new OpenHandler(primaryStage, canvas));
+        optimizeItem.setOnAction(new OptimizeHandler());
+        exportILPItem.setOnAction(new exportILPHandler());
+        importILPItem.setOnAction(new importILPHandler());
+        saveIMGItem.setOnAction(new SaveImgHandler());
+        redrawItem.setOnAction(new redrawHandler());
+        crossingItem.setOnAction(new CrossingsHandler());
+        exportHistoryItem.setOnAction(new ExportHistory());
 
 
-        ObservableList<javafx.scene.Node> controls = controlsVBox.getChildren();
-        controls.add(openButton);
-        controls.add(saveIMGButton);
-        controls.add(importSettingsButton);
-        controls.add(exportSettingsButton);
-        controls.add(optimizeButton);
-        controls.add(exportILPButton);
-        controls.add(importILPButton);
-        controls.add(redrawButton);
-        controls.add(crossingsButton);
-        controls.add(exportHistoryButton);
+        CheckMenuItem redrawCheckItem = new CheckMenuItem("Redraw");
+        MenuItem generalSettingsItem = new MenuItem("General Settins");
+        MenuItem geneSettingsItem = new MenuItem("Gene Settings");
+        MenuItem importSettingsItem = new MenuItem("Import Settings");
+        MenuItem exportSettingsItem = new MenuItem("Export Settings");
+        settingsMenu.getItems().addAll(redrawCheckItem, generalSettingsItem, geneSettingsItem,
+                importSettingsItem, exportSettingsItem);
+
+        redrawCheckItem.setSelected(Settings.redraw);
+        redrawCheckItem.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                Settings.redraw = redrawCheckItem.isSelected();
+            }
+        });
+
+        Stage generalSettingsStage = new Stage();
+        Stage geneSettingsStage = new Stage();
+        generalSettingsItem.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                generalSettingsStage.showAndWait();
+            }
+        });
+        geneSettingsItem.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                geneSettingsStage.showAndWait();
+            }
+        });
+        importSettingsItem.setOnAction(new importSettingsHandler());
+        exportHistoryItem.setOnAction(new exportSettingsHandler());
+
+
+        generalSettingsStage.initStyle(StageStyle.UTILITY);
+        generalSettingsStage.initModality(Modality.APPLICATION_MODAL);
+        GridPane paneGeneral = new GridPane();
+        Scene sceneGeneral = new Scene(paneGeneral);
+        ColumnConstraints columnGeneral1 = new ColumnConstraints();
+        columnGeneral1.setHalignment(HPos.RIGHT);
+        paneGeneral.getColumnConstraints().add(columnGeneral1);
+        ColumnConstraints columnGeneral2 = new ColumnConstraints();
+        columnGeneral2.setHalignment(HPos.LEFT);
+        paneGeneral.getColumnConstraints().add(columnGeneral2);
+        generalSettingsStage.setScene(sceneGeneral);
 
         Label timeDiffL = new Label("Time diff");
         final TextField timeDiffF = new TextField(Double.toString(Settings.time_diff));
-        HBox timeDiffH = new HBox(10);
-        timeDiffH.getChildren().addAll(timeDiffL, timeDiffF);
+        paneGeneral.add(timeDiffL, 0, 0);
+        paneGeneral.add(timeDiffF, 1, 0);
         timeDiffF.setOnAction(new EventHandler() {
 
             @Override
@@ -166,8 +223,8 @@ public class EHDraw extends Application {
 
         Label widthL = new Label("Width");
         final TextField widthF = new TextField(Integer.toString(Settings.width));
-        HBox widthH = new HBox(10);
-        widthH.getChildren().addAll(widthL, widthF);
+        paneGeneral.add(widthL, 0, 1);
+        paneGeneral.add(widthF, 1, 1);
         widthF.setOnAction(new EventHandler() {
 
             @Override
@@ -176,16 +233,17 @@ public class EHDraw extends Application {
                 if (validInteger(s)) {
                     Settings.width = Integer.parseInt(s);
                     cnv.setWidth(Settings.width);
-                    strom.calcScale();
-                    draw();
+                    canvas.setWidth(Settings.width);
+                    primaryStage.setWidth(Settings.width);
+                    stromRedraw(canvas);
                 }
             }
         });
 
         Label heightL = new Label("Height");
         final TextField heightF = new TextField(Integer.toString(Settings.height));
-        HBox heightH = new HBox(10);
-        heightH.getChildren().addAll(heightL, heightF);
+        paneGeneral.add(heightL, 0, 2);
+        paneGeneral.add(heightF, 1, 2);
         heightF.setOnAction(new EventHandler() {
 
             @Override
@@ -194,16 +252,17 @@ public class EHDraw extends Application {
                 if (validInteger(s)) {
                     Settings.height = Integer.parseInt(s);
                     cnv.setHeight(Settings.height);
-                    draw();
+                    canvas.setHeight(Settings.height);
+                    primaryStage.setHeight(Settings.height);
+                    stromRedraw(canvas);
                 }
             }
         });
 
         Label nodeGapL = new Label("Node Gap");
         final TextField nodeGapF = new TextField(Integer.toString(Settings.node_gap));
-        HBox nodeGapH = new HBox(10);
-        nodeGapH.getChildren().addAll(nodeGapL, nodeGapF);
-
+        paneGeneral.add(nodeGapL, 0, 3);
+        paneGeneral.add(nodeGapF, 1, 3);
         nodeGapF.setOnAction(new EventHandler() {
             @Override
             public void handle(Event event) {
@@ -211,11 +270,11 @@ public class EHDraw extends Application {
                 updated();
             }
         });
+
         Label chromosomeGapL = new Label("Chromosome Gap");
         final TextField chromosomeGapF = new TextField(Integer.toString(Settings.chromosome_gap));
-        HBox chromosomeGapH = new HBox(10);
-        chromosomeGapH.getChildren().addAll(chromosomeGapL, chromosomeGapF);
-
+        paneGeneral.add(chromosomeGapL, 0, 4);
+        paneGeneral.add(chromosomeGapF, 1, 4);
         chromosomeGapF.setOnAction(new EventHandler() {
             @Override
             public void handle(Event event) {
@@ -223,10 +282,11 @@ public class EHDraw extends Application {
                 updated();
             }
         });
+
         Label lineGapL = new Label("Line Gap");
         final TextField lineGapF = new TextField(Integer.toString(Settings.line_gap));
-        HBox lineGapH = new HBox(10);
-        lineGapH.getChildren().addAll(lineGapL, lineGapF);
+        paneGeneral.add(lineGapL, 0, 5);
+        paneGeneral.add(lineGapF, 1, 5);
         lineGapF.setOnAction(new EventHandler() {
 
             @Override
@@ -240,8 +300,8 @@ public class EHDraw extends Application {
 
         Label lineSizeL = new Label("Line Size");
         final TextField lineSizeF = new TextField(Integer.toString(Settings.line_size));
-        HBox lineSizeH = new HBox(10);
-        lineSizeH.getChildren().addAll(lineSizeL, lineSizeF);
+        paneGeneral.add(lineSizeL, 0, 6);
+        paneGeneral.add(lineSizeF, 1, 6);
         lineSizeF.setOnAction(new EventHandler() {
 
             @Override
@@ -256,8 +316,8 @@ public class EHDraw extends Application {
 
         Label satL = new Label("Saturation");
         final TextField satF = new TextField(Double.toString(Settings.saturation));
-        HBox satH = new HBox(10);
-        satH.getChildren().addAll(satL, satF);
+        paneGeneral.add(satL, 0, 7);
+        paneGeneral.add(satF, 1, 7);
         satF.setOnAction(new EventHandler() {
 
             @Override
@@ -273,8 +333,8 @@ public class EHDraw extends Application {
 
         Label briL = new Label("Brightness");
         final TextField briF = new TextField(Double.toString(Settings.brightness));
-        HBox briH = new HBox(10);
-        briH.getChildren().addAll(briL, briF);
+        paneGeneral.add(briL, 0, 8);
+        paneGeneral.add(briF, 1, 8);
         briF.setOnAction(new EventHandler() {
 
             @Override
@@ -290,8 +350,8 @@ public class EHDraw extends Application {
 
         Label optL = new Label("Optimization");
         final TextField optF = new TextField(Integer.toString(Settings.optimized));
-        HBox optH = new HBox(10);
-        optH.getChildren().addAll(optL, optF);
+        paneGeneral.add(optL, 0, 9);
+        paneGeneral.add(optF, 1, 9);
         optF.setOnAction(new EventHandler() {
             @Override
             public void handle(Event event) {
@@ -305,8 +365,8 @@ public class EHDraw extends Application {
 
         Label nonhighlightedL = new Label("Non highlighted");
         ColorPicker nonhighlightedP = new ColorPicker((Color) Settings.nonhighlighted);
-        HBox nonhighlightedH = new HBox(10);
-        nonhighlightedH.getChildren().addAll(nonhighlightedL, nonhighlightedP);
+        paneGeneral.add(nonhighlightedL, 0, 10);
+        paneGeneral.add(nonhighlightedP, 1, 10);
         nonhighlightedP.setOnAction(new EventHandler() {
             @Override
             public void handle(Event event) {
@@ -315,62 +375,65 @@ public class EHDraw extends Application {
             }
         });
 
-        final ToggleButton redraw = new ToggleButton("Redraw");
-        redraw.setSelected(Settings.redraw);
-        redraw.setOnAction(new EventHandler() {
 
-            @Override
-            public void handle(Event event) {
-                Settings.redraw = redraw.isSelected();
-            }
-        });
-
+        geneSettingsStage.initStyle(StageStyle.UTILITY);
+        geneSettingsStage.initModality(Modality.APPLICATION_MODAL);
+        GridPane paneGene = new GridPane();
+        Scene sceneGene = new Scene(paneGene);
+        ColumnConstraints columnGene1 = new ColumnConstraints();
+        columnGene1.setHalignment(HPos.RIGHT);
+        paneGene.getColumnConstraints().add(columnGene1);
+        ColumnConstraints columnGene2 = new ColumnConstraints();
+        columnGene2.setHalignment(HPos.LEFT);
+        paneGene.getColumnConstraints().add(columnGene2);
+        geneSettingsStage.setScene(sceneGene);
 
         pickGene = new ComboBox();
+        paneGene.add(pickGene, 0, 0);
 
 
         Label drawL = new Label("Draw");
         drawC = new ComboBox();
-        HBox drawH = new HBox(10);
-        drawH.getChildren().addAll(drawL, drawC);
+        paneGene.add(drawL, 0, 1);
+        paneGene.add(drawC, 1, 1);
 
 
         Label highlightedL = new Label("Highlighted");
         highlightedC = new ComboBox();
-        HBox highlightedB = new HBox(10);
-        highlightedB.getChildren().addAll(highlightedL, highlightedC);
+        paneGene.add(highlightedL, 0, 2);
+        paneGene.add(highlightedC, 1, 2);
 
 
         Label transparentL = new Label("Transparent");
         transparentC = new ComboBox();
-        HBox transparentH = new HBox(10);
-        transparentH.getChildren().addAll(transparentL, transparentC);
+        paneGene.add(transparentL, 0, 3);
+        paneGene.add(transparentC, 1, 3);
 
 
         Label lineWL = new Label("Line Width");
         lineWF = new TextField(Integer.toString(Settings.line_size));
-        HBox lineWH = new HBox(10);
-        lineWH.getChildren().addAll(lineWL, lineWF);
+        paneGene.add(lineWL, 0, 4);
+        paneGene.add(lineWF, 1, 4);
 
 
         Label nameL = new Label("Name");
         nameF = new TextField();
-        HBox nameH = new HBox(10);
-        nameH.getChildren().addAll(nameL, nameF);
+        paneGene.add(nameL, 0, 5);
+        paneGene.add(nameF, 1, 5);
 
 
         Label colourL = new Label("Colour");
         colorP = new ColorPicker();
-        HBox colorH = new HBox(10);
-        colorH.getChildren().addAll(colourL, colorP);
+        paneGene.add(colourL, 0, 6);
+        paneGene.add(colorP, 1, 6);
 
 
         removeMeta = new Button("Delete gene meta");
 
         useDefault = new Button("Delete all meta");
 
-        HBox metaButtonsH = new HBox(10);
-        metaButtonsH.getChildren().addAll(removeMeta, useDefault);
+        paneGene.add(removeMeta, 0, 7);
+        paneGene.add(useDefault, 1, 7);
         useDefault.setOnAction(new EventHandler() {
             @Override
             public void handle(Event event) {
@@ -390,9 +453,16 @@ public class EHDraw extends Application {
         });
         metaclear();
         attach_listeners();
-        globalsVBox.getChildren().addAll(timeDiffH, widthH, heightH, nodeGapH, chromosomeGapH, lineGapH, lineSizeH, satH, briH, optH, nonhighlightedH, redraw, pickGene, drawH, transparentH, highlightedB, lineWH, nameH, colorH, metaButtonsH);
 
 
+    }
+
+    private void stromRedraw(Canvas canvas) {
+
+        strom.calcScale();
+        strom.calcRealHeight();
+        canvas.setHeight(Settings.real_height);
+        draw();
     }
 
     private static void metaclear() {
@@ -758,12 +828,14 @@ public class EHDraw extends Application {
         return true;
     }
 
-    private static class OpenButtonHandler implements EventHandler<ActionEvent> {
+    private static class OpenHandler implements EventHandler<ActionEvent> {
 
         private final Stage primaryStage;
+        private Canvas canvas;
 
-        public OpenButtonHandler(Stage _primaryStage) {
+        public OpenHandler(Stage _primaryStage, Canvas canvas) {
             this.primaryStage = _primaryStage;
+            this.canvas = canvas;
         }
 
         @Override
@@ -772,11 +844,14 @@ public class EHDraw extends Application {
             FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("History file (*.history)", "*.history");
             fileChooser.getExtensionFilters().add(extFilter);
             File file = fileChooser.showOpenDialog(primaryStage);
+            //TODO: nehadzat null exception, ak nebol zvoleny subor
             Settings.title = file.getName();
             primaryStage.setTitle(Settings.title);
             try {
                 strom = new EvolutionTree();
                 strom.load(file);
+                strom.calcRealHeight();
+                canvas.setHeight(Settings.real_height);
                 draw();
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
@@ -788,9 +863,9 @@ public class EHDraw extends Application {
 
     }
 
-    private static class SaveImgButtonHandler implements EventHandler<ActionEvent> {
+    private static class SaveImgHandler implements EventHandler<ActionEvent> {
 
-        public SaveImgButtonHandler() {
+        public SaveImgHandler() {
 
         }
 
@@ -813,9 +888,9 @@ public class EHDraw extends Application {
         }
     }
 
-    private static class redrawButtonHandler implements EventHandler<ActionEvent> {
+    private static class redrawHandler implements EventHandler<ActionEvent> {
 
-        public redrawButtonHandler() {
+        public redrawHandler() {
 
         }
 
@@ -825,9 +900,9 @@ public class EHDraw extends Application {
         }
     }
 
-    private static class importSettingsButtonHandler implements EventHandler<ActionEvent> {
+    private static class importSettingsHandler implements EventHandler<ActionEvent> {
 
-        public importSettingsButtonHandler() {
+        public importSettingsHandler() {
         }
 
         @Override
@@ -842,9 +917,9 @@ public class EHDraw extends Application {
         }
     }
 
-    private static class exportSettingsButtonHandler implements EventHandler<ActionEvent> {
+    private static class exportSettingsHandler implements EventHandler<ActionEvent> {
 
-        public exportSettingsButtonHandler() {
+        public exportSettingsHandler() {
 
         }
 
@@ -866,9 +941,9 @@ public class EHDraw extends Application {
         }
     }
 
-    private static class OptimizeButtonHandler implements EventHandler<ActionEvent> {
+    private static class OptimizeHandler implements EventHandler<ActionEvent> {
 
-        public OptimizeButtonHandler() {
+        public OptimizeHandler() {
 
         }
 
@@ -879,9 +954,9 @@ public class EHDraw extends Application {
         }
     }
 
-    private static class exportILPButtonHandler implements EventHandler<ActionEvent> {
+    private static class exportILPHandler implements EventHandler<ActionEvent> {
 
-        public exportILPButtonHandler() {
+        public exportILPHandler() {
 
         }
 
@@ -914,9 +989,9 @@ public class EHDraw extends Application {
         }
     }
 
-    private static class importILPButtonHandler implements EventHandler<ActionEvent> {
+    private static class importILPHandler implements EventHandler<ActionEvent> {
 
-        public importILPButtonHandler() {
+        public importILPHandler() {
         }
 
         @Override
@@ -934,9 +1009,9 @@ public class EHDraw extends Application {
         }
     }
 
-    private static class CrossingsButtonHandler implements EventHandler<ActionEvent> {
+    private static class CrossingsHandler implements EventHandler<ActionEvent> {
 
-        public CrossingsButtonHandler() {
+        public CrossingsHandler() {
 
         }
 
