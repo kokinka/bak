@@ -1363,4 +1363,8 @@ class EvolutionTree {
         rek(this.getRoot(), 0, 0, 0, Settings.height, new NoDrawFactory());
         Settings.real_height = maxY + (int) Math.round(500 * Settings.scale);
     }
+
+    public boolean isEmpty() {
+        return this.root == null;
+    }
 }

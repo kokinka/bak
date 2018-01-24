@@ -11,6 +11,7 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -106,7 +107,6 @@ public class EHDraw extends Application {
                 canvas.setWidth(Settings.width * Settings.scale);
                 strom.calcScale();
                 strom.calcRealHeight();
-                System.out.println(Settings.real_height);
                 canvas.setHeight(Settings.real_height);
                 draw();
                 event.consume();
@@ -196,7 +196,10 @@ public class EHDraw extends Application {
         generalSettingsStage.initStyle(StageStyle.UTILITY);
         generalSettingsStage.initModality(Modality.APPLICATION_MODAL);
         GridPane paneGeneral = new GridPane();
-        Scene sceneGeneral = new Scene(paneGeneral);
+        paneGeneral.setHgap(10);
+        paneGeneral.setVgap(5);
+        paneGeneral.setAlignment(Pos.CENTER);
+        Scene sceneGeneral = new Scene(paneGeneral, 340, 420);
         ColumnConstraints columnGeneral1 = new ColumnConstraints();
         columnGeneral1.setHalignment(HPos.RIGHT);
         paneGeneral.getColumnConstraints().add(columnGeneral1);
@@ -379,7 +382,10 @@ public class EHDraw extends Application {
         geneSettingsStage.initStyle(StageStyle.UTILITY);
         geneSettingsStage.initModality(Modality.APPLICATION_MODAL);
         GridPane paneGene = new GridPane();
-        Scene sceneGene = new Scene(paneGene);
+        paneGene.setHgap(10);
+        paneGene.setVgap(5);
+        paneGene.setAlignment(Pos.CENTER);
+        Scene sceneGene = new Scene(paneGene, 360, 310);
         ColumnConstraints columnGene1 = new ColumnConstraints();
         columnGene1.setHalignment(HPos.RIGHT);
         paneGene.getColumnConstraints().add(columnGene1);
@@ -458,11 +464,12 @@ public class EHDraw extends Application {
     }
 
     private void stromRedraw(Canvas canvas) {
-
-        strom.calcScale();
-        strom.calcRealHeight();
-        canvas.setHeight(Settings.real_height);
-        draw();
+        if (!strom.isEmpty()) {
+            strom.calcScale();
+            strom.calcRealHeight();
+            canvas.setHeight(Settings.real_height);
+            draw();
+        }
     }
 
     private static void metaclear() {
