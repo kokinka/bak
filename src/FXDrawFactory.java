@@ -63,7 +63,7 @@ class FXDrawFactory extends DrawFactory {
     @Override
     public void clear() {
         gc.setFill(WHITE);
-        gc.fillRect(0, 0, Settings.width * Settings.scale, Settings.real_height);
+        gc.clearRect(0, 0, Settings.width * Settings.scale, Settings.real_height);
     }
 
 }

@@ -825,7 +825,6 @@ class EvolutionTree {
             } else {
                 line_y = first_y - ((1 / 2) * chromosomeDiff * (int) Math.round(Settings.chromosome_gap * Settings.scale));
             }
-            if (line_y > maxY) maxY = line_y;
             int k = 0;
             int l = node.chromosomes.get(0).genes.size() - 1; //dalsi koniec chromozomu
             int m = 0; //na ktorom sme chromozome
@@ -833,6 +832,7 @@ class EvolutionTree {
             for (int a : node.genePos) {
                 if (Settings.is_draw(node.allGenes.get(k))) {
                     if (a != -1) {
+                        if (line_y > maxY) maxY = line_y;
                         fac.drawGeneLine(prev_x, node.ancestor.gene_x_pos.get(a), line_x, line_y, node.allGenes.get(k));
                     }
                     //rectangle sa bude kreslit v tomto ife
@@ -870,6 +870,7 @@ class EvolutionTree {
                 //fac.setLineColor(this.gene_col[Math.abs(a)]);
                 node.gene_x_pos.add(line_y);
                 if (Settings.is_draw(a)) {
+                    if (line_y > maxY) maxY = line_y;
                     fac.drawGeneLine(line_x, line_y, timedif_x, line_y, a);
                     line_y += (int) Math.round(Settings.line_gap * Settings.scale) + Settings.gene_width(a);
                 }
@@ -1360,8 +1361,9 @@ class EvolutionTree {
 
     public void calcRealHeight() {
         calcwidth(this.getRoot());
+        maxY = 0;
         rek(this.getRoot(), 0, 0, 0, Settings.height, new NoDrawFactory());
-        Settings.real_height = maxY + (int) Math.round(500 * Settings.scale);
+        Settings.real_height = maxY + (int) Math.round(50 * Settings.scale);
     }
 
     public boolean isEmpty() {

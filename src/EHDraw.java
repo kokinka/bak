@@ -96,14 +96,18 @@ public class EHDraw extends Application {
             public void handle(ScrollEvent event) {
                 double delta = 1.1;
                 double min_scale = 0.1;
-                double max_scale = 4;
+                double max_scale = 10;
+                double scale;
 
                 if (event.getDeltaY() < 0) {
-                    Settings.scale = Math.max(Settings.scale / delta, min_scale);
+                    scale = Math.max(Settings.scale / delta, min_scale);
                 } else {
-                    Settings.scale = Math.min(Settings.scale * delta, max_scale);
+                    scale = Math.min(Settings.scale * delta, max_scale);
+                    if (Settings.real_height > 10000) scale = Settings.scale;
 
                 }
+
+                Settings.scale = scale;
                 canvas.setWidth(Settings.width * Settings.scale);
                 strom.calcScale();
                 strom.calcRealHeight();
@@ -112,24 +116,7 @@ public class EHDraw extends Application {
                 event.consume();
             }
         });
-        scene.widthProperty().addListener(new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observableValue, Number oldSceneWidth, Number newSceneWidth) {
-                Settings.width = newSceneWidth.intValue();
-                cnv.setWidth(Settings.width);
-                canvas.setWidth(Settings.width);
-                stromRedraw(canvas);
-            }
-        });
-        scene.heightProperty().addListener(new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observableValue, Number oldSceneHeight, Number newSceneHeight) {
-                Settings.height = newSceneHeight.intValue();
-                cnv.setHeight(Settings.height);
-                canvas.setHeight(Settings.height);
-                stromRedraw(canvas);
-            }
-        });
+
         primaryStage.setTitle(Settings.title);
         primaryStage.setScene(scene);
 
@@ -459,6 +446,25 @@ public class EHDraw extends Application {
         });
         metaclear();
         attach_listeners();
+
+        scene.widthProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observableValue, Number oldSceneWidth, Number newSceneWidth) {
+                Settings.width = newSceneWidth.intValue();
+                cnv.setWidth(Settings.width);
+                canvas.setWidth(Settings.width);
+                stromRedraw(canvas);
+                widthF.setText(Integer.toString(Settings.width));
+            }
+        });
+        scene.heightProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observableValue, Number oldSceneHeight, Number newSceneHeight) {
+                Settings.height = newSceneHeight.intValue();
+                cnv.setHeight(Settings.height);
+                heightF.setText(Integer.toString(Settings.height));
+            }
+        });
 
 
     }
