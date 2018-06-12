@@ -50,7 +50,7 @@ public class EHDraw extends Application {
     static String crossings_output = "crossings.txt";
     static String load_settings = null; //-settings:filename
     static String load_lp = null;
-    static ComboBox pickGene;
+    static ComboBox pickGene = new ComboBox();
     static Button removeMeta;
     static ComboBox drawC;
     static ComboBox highlightedC;
@@ -60,6 +60,10 @@ public class EHDraw extends Application {
     static ColorPicker colorP;
     static Button useDefault;
 
+    static Stage geneSettingsStage = new Stage();
+    static Group group = new Group();
+    static DrawFactory drawfact = new FXSelectableDrawFactory(group, geneSettingsStage, pickGene);
+
     //static Settings s=new Settings();
     //Scanner in = new Scanner(System.in);
     @Override
@@ -68,27 +72,19 @@ public class EHDraw extends Application {
 
         BorderPane root = new BorderPane();
         final Canvas cnv = new Canvas(Settings.width, Settings.height);
-        Pane cnvPane = new Pane();
-        cnvPane.getChildren().add(cnv);
 
         MenuBar menuBar = new MenuBar();
         Menu fileMenu = new Menu("File");
         Menu settingsMenu = new Menu("Settings");
         menuBar.getMenus().addAll(fileMenu, settingsMenu);
 
-        root.setCenter(cnvPane);
-        root.setTop(menuBar);
-
-        Group group = new Group();
-
-        StackPane pane = new StackPane();
         Canvas canvas = new Canvas(Settings.width, Settings.height);
-        pane.getChildren().add(canvas);
-        pane.getChildren().add(root);
-        group.getChildren().add(pane);
-        Scene scene = new Scene(group, Settings.width, Settings.height);
+        group.getChildren().add(canvas);
+        root.setCenter(group);
+        root.setTop(menuBar);
+        Scene scene = new Scene(root, Settings.width, Settings.height);
 
-        SceneGestures sceneGestures = new SceneGestures(canvas);
+        SceneGestures sceneGestures = new SceneGestures(group);
         scene.addEventFilter(MouseEvent.MOUSE_PRESSED, sceneGestures.getOnMousePressedEventHandler());
         scene.addEventFilter(MouseEvent.MOUSE_DRAGGED, sceneGestures.getOnMouseDraggedEventHandler());
         scene.addEventFilter(ScrollEvent.ANY, new EventHandler<ScrollEvent>() {
@@ -163,7 +159,7 @@ public class EHDraw extends Application {
         });
 
         Stage generalSettingsStage = new Stage();
-        Stage geneSettingsStage = new Stage();
+        //Stage geneSettingsStage = new Stage();
         generalSettingsItem.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
@@ -173,6 +169,7 @@ public class EHDraw extends Application {
         geneSettingsItem.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
+                pickGene.setValue("None");
                 geneSettingsStage.showAndWait();
             }
         });
@@ -381,8 +378,25 @@ public class EHDraw extends Application {
         paneGene.getColumnConstraints().add(columnGene2);
         geneSettingsStage.setScene(sceneGene);
 
-        pickGene = new ComboBox();
+        //pickGene = new ComboBox();
+        CheckBox click = new CheckBox("Select by clicking");
+        click.setSelected(Settings.selectable_genes);
+        click.selectedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+                drawfact.clear();
+                Settings.selectable_genes = click.isSelected();
+                if (click.isSelected()){
+                    drawfact = new FXSelectableDrawFactory(group, geneSettingsStage, pickGene);
+                } else {
+                    drawfact = new FXDrawFactory(gc);
+                }
+                stromRedraw(canvas);
+            }
+        });
         paneGene.add(pickGene, 0, 0);
+        paneGene.add(click, 1, 0);
+
 
 
         Label drawL = new Label("Draw");
@@ -828,9 +842,11 @@ public class EHDraw extends Application {
     }
 
     private static void draw() {
-        DrawFactory drawF = new FXDrawFactory(gc);
-        drawF.clear();
-        strom.print(drawF);
+        if (!strom.isEmpty()) {
+            //DrawFactory drawF = new FXSelectableDrawFactory(group, geneSettingsStage, pickGene);
+            drawfact.clear();
+            strom.print(drawfact);
+        }
     }
 
     private static boolean validDouble(String s) {
@@ -857,20 +873,20 @@ public class EHDraw extends Application {
             FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("History file (*.history)", "*.history");
             fileChooser.getExtensionFilters().add(extFilter);
             File file = fileChooser.showOpenDialog(primaryStage);
-            //TODO: nehadzat null exception, ak nebol zvoleny subor
-            Settings.title = file.getName();
-            primaryStage.setTitle(Settings.title);
-            try {
-                strom = new EvolutionTree();
-                strom.load(file);
-                strom.calcRealHeight();
-                canvas.setHeight(Settings.real_height);
-                draw();
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
+            if (file != null) {
+                Settings.title = file.getName();
+                primaryStage.setTitle(Settings.title);
+                try {
+                    strom = new EvolutionTree();
+                    strom.load(file);
+                    strom.calcRealHeight();
+                    canvas.setHeight(Settings.real_height);
+                    draw();
+                } catch (FileNotFoundException ex) {
+                    Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                metaclear();
             }
-            metaclear();
-
         }
 
 
@@ -924,9 +940,10 @@ public class EHDraw extends Application {
             FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("xml files (*.xml)", "*.xml");
             fileChooser.getExtensionFilters().add(extFilter);
             File file = fileChooser.showOpenDialog(primaryStage);
-            Settings.loadXML(file);
-            updated();
-
+            if (file != null) {
+                Settings.loadXML(file);
+                updated();
+            }
         }
     }
 
@@ -1013,12 +1030,14 @@ public class EHDraw extends Application {
             FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("Solution files (*.sol)", "*.sol");
             fileChooser.getExtensionFilters().add(extFilter);
             File file = fileChooser.showOpenDialog(primaryStage);
-            try {
-                strom.loadILP(file);
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
+            if (file != null) {
+                try {
+                    strom.loadILP(file);
+                } catch (FileNotFoundException ex) {
+                    Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                updated();
             }
-            updated();
         }
     }
 

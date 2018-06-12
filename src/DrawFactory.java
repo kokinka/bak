@@ -1,7 +1,5 @@
 
 import java.io.File;
-import java.util.ArrayList;
-
 import javafx.scene.paint.Color;
 
 /*
@@ -25,8 +23,6 @@ abstract class DrawFactory {
 
     public abstract void drawRectangle(double x1, double y1, double x2, double y2, boolean isCircular);
 
-    public abstract void writeLeafName(String name, double x, double y);
-
     public abstract void setLineWidth(double width);
 
     public abstract void clear();
@@ -39,7 +35,4 @@ abstract class DrawFactory {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    public abstract void writeGeneNames(ArrayList<Integer> allGenes, ArrayList<Integer> gene_y_pos);
-
-    public abstract void translateX(int i);
 }

@@ -1360,10 +1360,12 @@ class EvolutionTree {
     }
 
     public void calcRealHeight() {
-        calcwidth(this.getRoot());
-        maxY = 0;
-        rek(this.getRoot(), 0, 0, 0, Settings.height, new NoDrawFactory());
-        Settings.real_height = maxY + (int) Math.round(50 * Settings.scale);
+        if (this.getRoot() != null) {
+            calcwidth(this.getRoot());
+            maxY = 0;
+            rek(this.getRoot(), 0, 0, 0, Settings.height, new NoDrawFactory());
+            Settings.real_height = maxY + (int) Math.round(50 * Settings.scale);
+        }
     }
 
     public boolean isEmpty() {

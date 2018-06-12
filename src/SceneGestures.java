@@ -1,4 +1,5 @@
 import javafx.event.EventHandler;
+import javafx.scene.Group;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.input.MouseEvent;
 
@@ -15,10 +16,11 @@ public class SceneGestures {
 
     private DragContext sceneDragContext = new DragContext();
 
-    Canvas canvas;
+    //Canvas canvas;
+    Group group;
 
-    public SceneGestures(Canvas canvas) {
-        this.canvas = canvas;
+    public SceneGestures(Group group) {
+        this.group = group;
     }
 
     public EventHandler<MouseEvent> getOnMousePressedEventHandler() {
@@ -40,11 +42,12 @@ public class SceneGestures {
             if (!event.isPrimaryButtonDown())
                 return;
 
+
             sceneDragContext.mouseAnchorX = event.getSceneX();
             sceneDragContext.mouseAnchorY = event.getSceneY();
 
-            sceneDragContext.translateAnchorX = canvas.getTranslateX();
-            sceneDragContext.translateAnchorY = canvas.getTranslateY();
+            sceneDragContext.translateAnchorX = group.getTranslateX();
+            sceneDragContext.translateAnchorY = group.getTranslateY();
 
         }
 
@@ -56,8 +59,8 @@ public class SceneGestures {
             if (!event.isPrimaryButtonDown())
                 return;
 
-            canvas.setTranslateX(sceneDragContext.translateAnchorX + event.getSceneX() - sceneDragContext.mouseAnchorX);
-            canvas.setTranslateY(sceneDragContext.translateAnchorY + event.getSceneY() - sceneDragContext.mouseAnchorY);
+            group.setTranslateX(sceneDragContext.translateAnchorX + event.getSceneX() - sceneDragContext.mouseAnchorX);
+            group.setTranslateY(sceneDragContext.translateAnchorY + event.getSceneY() - sceneDragContext.mouseAnchorY);
 
             event.consume();
         }

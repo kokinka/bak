@@ -67,6 +67,7 @@ class Settings {
     static public boolean default_highlighted =true;
     /*private*/ static TreeMap<Integer, GeneMeta> gene_meta = new TreeMap<Integer, GeneMeta>();
     static Paint nonhighlighted = Color.LIGHTGRAY;
+    public static boolean selectable_genes = true;
 
     private static List<Integer> genes;
 
