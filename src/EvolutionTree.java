@@ -321,6 +321,10 @@ class EvolutionTree {
             return this.calcNodeWidth() + 2 * Settings.node_gap;
         }
 
+        public EvolutionNode getAncestor() {
+            return this.ancestor;
+        }
+
     }
 
     public void load(File f) throws FileNotFoundException {
@@ -912,7 +916,7 @@ class EvolutionTree {
         return result;
     }
 
-    // zmeni genePos pre chromozomy v node1, aj cely genePos v node1 podla toho ako sa premiesal node2
+    //zmeni genePos pre chromozomy v node1, aj cely genePos v node1 podla toho ako sa premiesal node2
     void changeGenePos(EvolutionNode node1, EvolutionNode node2, ArrayList<Integer> relativeChromosomesPos) {
         ArrayList<Integer> newGenePos = new ArrayList<>();
         int counter = node1.chromosomes.get(0).genePos.size();
@@ -941,198 +945,6 @@ class EvolutionTree {
         node1.genePos = newGenePos;
     }
 
-    private void oneSidedOpt(Set<EvolutionNode> stableNodeSet, EvolutionNode unstableNode, boolean isBackwards) {
-        if (!isBackwards) {
-            for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
-                if (stableNodeSet == null) otocChromozomVKoreni(unstableNode, i);
-                else {
-                    ArrayList<Integer> result = rezatAOtocit(unstableNode.chromosomes.get(i), unstableNode.ancestor);
-                    rez(unstableNode, i, result.get(0));
-                    if (result.get(1) == 1) otoc(unstableNode, i);
-                }
-            }
-        }
-
-        if (stableNodeSet == null) return;
-
-        // zoznam id genov z druheho nodu(nodov), s ktorymi je chromozom spojeny, vyuzijeme v barycentrovej heuristike
-        ArrayList<ArrayList<Integer>> geneConnection = new ArrayList<>();
-        for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
-            geneConnection.add(new ArrayList<>());
-        }
-        // toto pole hovori ktoremu chromozomu patri pozicia z genPos v potomkovi unstableNode
-        // je potrebne aby sme si pamatali ako to bolo pred tym ako sa chromozomy premiesaju
-        ArrayList<Integer> relativeChromosomesPos1 = new ArrayList<>();
-        ArrayList<Integer> relativeChromosomesPos2 = new ArrayList<>();
-        // v tejto casti vytvaram arraylist geneConnection a pole relativeCh pre oba pripady dopredu, dozadu
-        if (!isBackwards) {
-            if (unstableNode.getFirst() != null) {
-                for (int i = 0; i < unstableNode.getFirst().genePos.size(); i++) {
-                    relativeChromosomesPos1.add(which_chromosome(unstableNode, unstableNode.getFirst().genePos.get(i)));
-                }
-            }
-            if (unstableNode.getSecond() != null) {
-                for (int i = 0; i < unstableNode.getSecond().genePos.size(); i++) {
-                    relativeChromosomesPos2.add(which_chromosome(unstableNode, unstableNode.getSecond().genePos.get(i)));
-                }
-            }
-            for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
-                geneConnection.get(i).addAll(unstableNode.chromosomes.get(i).genePos);
-                ArrayList<Integer> minusJedna = new ArrayList<>();
-                minusJedna.add(-1);
-                geneConnection.get(i).removeAll(minusJedna);
-            }
-        } else {
-            for (int i = 0; i < unstableNode.getFirst().genePos.size(); i++) {
-                int which_ch = which_chromosome(unstableNode, unstableNode.getFirst().genePos.get(i));
-                relativeChromosomesPos1.add(which_ch);
-                if (which_ch != -1) {
-                    geneConnection.get(which_ch).add(i);
-                }
-            }
-            if (stableNodeSet.size() == 2) {
-                for (int i = 0; i < unstableNode.getSecond().genePos.size(); i++) {
-                    int which_ch = which_chromosome(unstableNode, unstableNode.getSecond().genePos.get(i));
-                    relativeChromosomesPos2.add(which_ch);
-                    if (which_ch != -1) {
-                        geneConnection.get(which_ch).add(i);
-                    }
-                }
-            }
-        }
-
-        //pocitanie score pre chromozomy v node
-        for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
-            for (Integer j : geneConnection.get(i)) {
-                unstableNode.chromosomes.get(i).score += j + 1;
-            }
-            unstableNode.chromosomes.get(i).score /= geneConnection.get(i).size();
-        }
-
-        //pre kazdy chromozom v node si zapamatam ich aktualne poradie
-        for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
-            unstableNode.chromosomes.get(i).relativeOrderID = i;
-        }
-
-        //sortovanie chromozomov v node
-        (unstableNode.chromosomes).sort((o1, o2) -> {
-            if (o1.score > o2.score) return 1;
-            if (o1.score < o2.score) return -1;
-            return 0;
-        });
-
-        normalizeNode(unstableNode, relativeChromosomesPos1, relativeChromosomesPos2);
-
-    }
-
-    private ArrayList<Integer> rezatAOtocit(Chromosome ch, EvolutionNode ancestor) {
-        ArrayList<Integer> vysledokOtocenia = chcemOtacatOpt(ch, ancestor);
-        ArrayList<Integer> result = new ArrayList<>();
-        if (!ch.isCircular) {
-            result.add(0);
-            if (vysledokOtocenia.get(0) == 1) result.add(1);
-            else result.add(0);
-            return result;
-        }
-        int najuspesnejsiRez = 0;
-        boolean chcemOtocit;
-        if (vysledokOtocenia.get(0) == 1) {
-            chcemOtocit = true;
-        } else chcemOtocit = false;
-        int minPocetKrizeni = vysledokOtocenia.get(1);
-        for (int rez = 1; rez < ch.genePos.size(); rez++) {
-            ArrayList<Integer> newGenePos = new ArrayList<>();
-            ArrayList<Integer> newGenes = new ArrayList<>();
-            for (int j = rez; j < ch.genePos.size(); j++) {
-                newGenePos.add(ch.genePos.get(j));
-                newGenes.add(ch.genes.get(j));
-            }
-            for (int j = 0; j < rez; j++) {
-                newGenePos.add(ch.genePos.get(j));
-                newGenes.add(ch.genes.get(j));
-            }
-            Chromosome newCh = new Chromosome(newGenes, true);
-            newCh.genePos = newGenePos;
-            int pocetKrizeni;
-            vysledokOtocenia = chcemOtacatOpt(newCh, ancestor);
-            pocetKrizeni = vysledokOtocenia.get(1);
-            if (pocetKrizeni < minPocetKrizeni) {
-                minPocetKrizeni = pocetKrizeni;
-                najuspesnejsiRez = rez;
-                if (vysledokOtocenia.get(0) == 1) {
-                    chcemOtocit = true;
-                } else chcemOtocit = false;
-            }
-        }
-
-        result.add(najuspesnejsiRez);
-        if (chcemOtocit) result.add(1);
-        else result.add(0);
-        return result;
-    }
-
-    private int spocitajKrizeniaPreChromozom(ArrayList<Integer> genePos) {
-        int crossings = 0;
-        for (int j = 0; j < genePos.size(); j++) {
-            for (int i = j + 1; i < genePos.size(); i++) {
-                if (genePos.get(i) == -1) continue;
-                if (genePos.get(i) < genePos.get(j)) crossings++;
-            }
-        }
-        return crossings;
-    }
-
-    private ArrayList<Integer> chcemOtacatOpt(Chromosome ch, EvolutionNode ancestor) {
-        int myCrossings1 = spocitajKrizeniaPreChromozom(ch.genePos);
-
-        ArrayList<Integer> newGenePos = new ArrayList<>();
-        ArrayList<Integer> newGenes = new ArrayList<>();
-
-        for (int i = ch.genePos.size() - 1; i >= 0; i--) {
-            if (ch.genePos.get(i) != -1) {
-                int ancestorGene = ancestor.allGenes.get(ch.genePos.get(i));
-                if ((ancestorGene >= 0 && ch.genes.get(i) < 0)
-                        || (ancestorGene < 0 && ch.genes.get(i) >= 0)
-                        ) myCrossings1++;
-            }
-            if (ch.genes.get(i) < 0) myCrossings1++;
-            newGenePos.add(ch.genePos.get(i));
-            newGenes.add(ch.genes.get(i) * (-1));
-        }
-        int myCrossings2 = spocitajKrizeniaPreChromozom(newGenePos);
-        for (int i = ch.genePos.size() - 1; i >= 0; i--) {
-            if (newGenePos.get(i) != -1) {
-                int ancestorGene = ancestor.allGenes.get(newGenePos.get(i));
-                if ((ancestorGene >= 0 && newGenes.get(i) < 0)
-                        || (ancestorGene < 0 && newGenes.get(i) >= 0)
-                        ) myCrossings2++;
-            }
-            if (newGenes.get(i) < 0) myCrossings2++;
-        }
-
-        ArrayList<Integer> result = new ArrayList<>();
-        if (myCrossings1 > myCrossings2) {
-            result.add(1);
-            result.add(myCrossings2);
-        } else {
-            result.add(0);
-            result.add(myCrossings1);
-        }
-
-        return result;
-    }
-
-    private void otocChromozomVKoreni(EvolutionNode node, int ktory) {
-        int reverseGenes = 0;
-        Chromosome ch = node.chromosomes.get(ktory);
-        for (int i = 0; i < ch.genes.size(); i++) {
-            if (ch.genes.get(i) < 0) {
-                reverseGenes++;
-            }
-        }
-        if (reverseGenes > ch.genes.size() / 2) otoc(node, ktory);
-    }
-
     void normalizeNode(EvolutionNode unstableNode, ArrayList<Integer> relativeChromosomesPos1, ArrayList<Integer> relativeChromosomesPos2) {
         // najdenie noveho genePos pre nasledovnikov node2
         if (unstableNode.getFirst() != null) {
@@ -1154,45 +966,7 @@ class EvolutionTree {
     }
 
     EvolutionTree level_by_level_sweep() {
-        if (this.getRoot() == null) return null;
-        int counter = 0;
-        int bestCrossings = countCrossings(this.getRoot());
-        System.out.println(bestCrossings);
-        EvolutionTree bestTree = this.copy();
-        int lastCrossingNumber = Integer.MAX_VALUE;
-        while (!(counter == 5)) {
-            optimalizuj(this.getRoot());
-            int crossingNumber = countCrossings(this.getRoot());
-            if (crossingNumber == lastCrossingNumber) break;
-            if (crossingNumber > lastCrossingNumber) counter++;
-            if (crossingNumber < bestCrossings) {
-                bestCrossings = crossingNumber;
-                bestTree = this.copy();
-            }
-            lastCrossingNumber = crossingNumber;
-        }
-        System.out.println(bestCrossings);
-        return bestTree;
-    }
-
-
-    private void optimalizuj(EvolutionNode node) {
-        if (node.ancestor != null) {
-            Set<EvolutionNode> set = new HashSet<>();
-            set.add(node.ancestor);
-            oneSidedOpt(set, node, false);
-        } else oneSidedOpt(null, node, false);
-
-        if (node.getFirst() != null) {
-            Set<EvolutionNode> set = new HashSet<>();
-            set.add(node.getFirst());
-            optimalizuj(node.getFirst());
-            if (node.getSecond() != null) {
-                set.add(node.getSecond());
-                optimalizuj(node.getSecond());
-            }
-            oneSidedOpt(set, node, true);
-        }
+        return Settings.minimization_strategy.minimizeCrossing(this);
     }
 
     Integer countCrossings(EvolutionNode node) {

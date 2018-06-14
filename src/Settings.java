@@ -68,6 +68,7 @@ class Settings {
     /*private*/ static TreeMap<Integer, GeneMeta> gene_meta = new TreeMap<Integer, GeneMeta>();
     static Paint nonhighlighted = Color.LIGHTGRAY;
     public static boolean selectable_genes = true;
+    public static MinimizationStrategy minimization_strategy = new BarycenterMinimizationStrategy();
 
     private static List<Integer> genes;
 
