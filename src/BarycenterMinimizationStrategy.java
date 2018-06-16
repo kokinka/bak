@@ -8,7 +8,7 @@ public class BarycenterMinimizationStrategy implements MinimizationStrategy {
     @Override
     public EvolutionTree minimizeCrossing(EvolutionTree strom) {
         this.strom = strom;
-        if (strom.getRoot() == null) return null;
+        if (strom.isEmpty()) return null;
         int counter = 0;
         int bestCrossings = strom.countCrossings(strom.getRoot());
         System.out.println(bestCrossings);
@@ -238,5 +238,5 @@ public class BarycenterMinimizationStrategy implements MinimizationStrategy {
             }
         }
         if (reverseGenes > ch.genes.size() / 2) strom.otoc(node, ktory);
-    }   
+    }
 }

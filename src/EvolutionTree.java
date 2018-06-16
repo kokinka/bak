@@ -1145,4 +1145,71 @@ class EvolutionTree {
     public boolean isEmpty() {
         return this.root == null;
     }
+
+    //pole nove_poradie si pre kazdy chromozom pamata jeho novu poziciu v node
+    public void zmenPoradieChromozomov(EvolutionNode node, ArrayList<Integer> nove_poradie){
+        ArrayList<ArrayList<Integer>> stare_poradie = new ArrayList<>();
+        ArrayList<Integer> nove_genePos = new ArrayList<>();
+        ArrayList<Integer> nove_genes = new ArrayList<>();
+        ArrayList<Integer> prepisat = new ArrayList<>();
+        ArrayList<Chromosome> nove_chromosomes = new ArrayList<>();
+        for (int i = 0; i<nove_poradie.size(); i++){
+            nove_genePos.addAll(node.chromosomes.get(nove_poradie.get(i)).genePos);
+            nove_genes.addAll(node.chromosomes.get(nove_poradie.get(i)).genes);
+            nove_chromosomes.add(node.chromosomes.get(nove_poradie.get(i)).copy());
+        }
+
+        for (int i = 0; i<node.genePos.size(); i++){
+            prepisat.add(-1);
+        }
+
+        int counter = 0;
+        for (int i = 0; i<nove_poradie.size(); i++){
+            int offset = 0;
+            for (int j = 0; j<nove_poradie.get(i); j++){
+                offset += node.chromosomes.get(j).genePos.size();
+            }
+
+            for (int j = 0; j<node.chromosomes.get(nove_poradie.get(i)).genePos.size(); j++){
+                prepisat.set(offset+j, counter);
+                counter++;
+            }
+        }
+
+        EvolutionNode next = node.getFirst();
+        if (next != null){
+            for (int i = 0; i<next.genePos.size(); i++){
+                if (next.genePos.get(i)== -1) continue;
+                next.genePos.set(i, prepisat.get(next.genePos.get(i)));
+            }
+
+            for (int i = 0; i<next.chromosomes.size(); i++){
+                for (int j = 0; j<next.chromosomes.get(i).genePos.size(); j++){
+                    if (next.chromosomes.get(i).genePos.get(j) == -1) continue;
+                    next.chromosomes.get(i).genePos.set(j, prepisat.get(next.chromosomes.get(i).genePos.get(j)));
+                }
+            }
+        }
+
+        next = node.getSecond();
+        if (next != null){
+            for (int i = 0; i<next.genePos.size(); i++){
+                if (next.genePos.get(i)== -1) continue;
+                next.genePos.set(i, prepisat.get(next.genePos.get(i)));
+            }
+
+            for (int i = 0; i<next.chromosomes.size(); i++){
+                for (int j = 0; j<next.chromosomes.get(i).genePos.size(); j++){
+                    if (next.chromosomes.get(i).genePos.get(j) == -1) continue;
+                    next.chromosomes.get(i).genePos.set(j, prepisat.get(next.chromosomes.get(i).genePos.get(j)));
+                }
+            }
+        }
+
+        node.genePos = new ArrayList<>(nove_genePos);
+        node.allGenes = new ArrayList<>(nove_genes);
+        node.chromosomes = new ArrayList<>(nove_chromosomes);
+
+
+    }
 }

@@ -846,6 +846,16 @@ public class EHDraw extends Application {
             //DrawFactory drawF = new FXSelectableDrawFactory(group, geneSettingsStage, pickGene);
             drawfact.clear();
             strom.print(drawfact);
+//            EvolutionTree.EvolutionNode next = strom.getRoot();
+//            while(next != null){
+//                for (int i = 0; i<next.chromosomes.size(); i++){
+//                    System.out.println("chromosome "+i+" genepos: " + next.chromosomes.get(i).genePos);
+//                    //System.out.println(strom.which_chromosome(next, i));
+//                }
+//
+//                next = next.getFirst();
+//                System.out.println();
+//            }
         }
     }
 
