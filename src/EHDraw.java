@@ -147,8 +147,9 @@ public class EHDraw extends Application {
         MenuItem geneSettingsItem = new MenuItem("Gene Settings");
         MenuItem importSettingsItem = new MenuItem("Import Settings");
         MenuItem exportSettingsItem = new MenuItem("Export Settings");
+        Menu minimizeSubmenu = new Menu ("Minimize Algorithm");
         settingsMenu.getItems().addAll(redrawCheckItem, generalSettingsItem, geneSettingsItem,
-                importSettingsItem, exportSettingsItem);
+                importSettingsItem, exportSettingsItem, minimizeSubmenu);
 
         redrawCheckItem.setSelected(Settings.redraw);
         redrawCheckItem.setOnAction(new EventHandler<ActionEvent>() {
@@ -175,6 +176,25 @@ public class EHDraw extends Application {
         });
         importSettingsItem.setOnAction(new importSettingsHandler());
         exportHistoryItem.setOnAction(new exportSettingsHandler());
+
+        RadioMenuItem barycenter = new RadioMenuItem("Barycenter");
+        RadioMenuItem relatOrder = new RadioMenuItem("Relative Order");
+        ToggleGroup tgroup = new ToggleGroup();
+        barycenter.setToggleGroup(tgroup);
+        relatOrder.setToggleGroup(tgroup);
+        relatOrder.setSelected(true);
+        tgroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
+            @Override
+            public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
+                if (newValue == barycenter){
+                    Settings.minimization_strategy = new BarycenterMinimizationStrategy();
+                }
+                if (newValue == relatOrder){
+                    Settings.minimization_strategy = new RelativeOrderMinimizationStrategy();
+                }
+            }
+        });
+        minimizeSubmenu.getItems().addAll(barycenter, relatOrder);
 
 
         generalSettingsStage.initStyle(StageStyle.UTILITY);

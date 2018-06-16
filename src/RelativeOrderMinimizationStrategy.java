@@ -2,8 +2,7 @@ import java.util.ArrayList;
 
 public class RelativeOrderMinimizationStrategy implements MinimizationStrategy {
     private EvolutionTree strom;
-    private ArrayList<ArrayList<Integer>> graf1;
-    private ArrayList<ArrayList<Integer>> graf2;
+    private ArrayList<ArrayList<ArrayList<Integer>>> graf;
 
     @Override
     public EvolutionTree minimizeCrossing(EvolutionTree strom) {
@@ -22,13 +21,14 @@ public class RelativeOrderMinimizationStrategy implements MinimizationStrategy {
     }
 
     private void vytvor_graf(EvolutionTree.EvolutionNode node, EvolutionTree.EvolutionNode next){
-        graf1 = new ArrayList<>();
-        graf2 = new ArrayList<>();
+        graf = new ArrayList<>();
+        graf.add(new ArrayList<>());
+        graf.add(new ArrayList<>());
         for (int i = 0; i<node.chromosomes.size(); i++){
-            graf1.add(new ArrayList<>());
+            graf.get(0).add(new ArrayList<>());
         }
         for (int i = 0; i<next.chromosomes.size(); i++){
-            graf2.add(new ArrayList<>());
+            graf.get(1).add(new ArrayList<>());
         }
 
         for (int i = 0; i<next.chromosomes.size(); i++){
@@ -39,8 +39,8 @@ public class RelativeOrderMinimizationStrategy implements MinimizationStrategy {
             for (int j = 0; j<next.chromosomes.get(i).genes.size(); j++){
                 int chromosome = strom.which_chromosome(node, next.genePos.get(j));
                 if (chromosome != -1 && !spojene.get(chromosome)){
-                    graf1.get(chromosome).add(i);
-                    graf2.get(i).add(chromosome);
+                    graf.get(0).get(chromosome).add(i);
+                    graf.get(1).get(i).add(chromosome);
                     spojene.set(chromosome, true);
                 }
             }
@@ -49,53 +49,53 @@ public class RelativeOrderMinimizationStrategy implements MinimizationStrategy {
     }
 
     private ArrayList<Integer> poradie;
-    private ArrayList<Boolean>spracovane1;
-    private ArrayList<Boolean>spracovane2;
+    private ArrayList<ArrayList<Boolean>> spracovane;
 
     private void relat_poradie(EvolutionTree.EvolutionNode node, EvolutionTree.EvolutionNode next){
         poradie = new ArrayList<>();
-        spracovane1 = new ArrayList<>();
+        spracovane = new ArrayList<>();
+        spracovane.add(new ArrayList<>());
+        spracovane.add(new ArrayList<>());
         for (int i = 0; i<node.chromosomes.size(); i++){
-            spracovane1.add(false);
+            spracovane.get(0).add(false);
         }
-        spracovane2 = new ArrayList<>();
         for (int i = 0; i<next.chromosomes.size(); i++){
-            spracovane2.add(false);
+            spracovane.get(1).add(false);
         }
         for (int i = 0; i<node.chromosomes.size(); i++)
-            dfs1(node, i, next);
+            dfs(node, i, 0, next);
 
 
     }
 
-    private void dfs1(EvolutionTree.EvolutionNode node, int i, EvolutionTree.EvolutionNode other){
+    private void dfs(EvolutionTree.EvolutionNode node, int i, int g, EvolutionTree.EvolutionNode other){
         if (i == node.chromosomes.size()) return;
-        if (spracovane1.get(i)) return;
-        spracovane1.set(i, true);
-        for (int j = 0; j<graf1.get(i).size(); j++){
-            dfs2(other, graf1.get(i).get(j), node);
+        if (spracovane.get(g).get(i)) return;
+        spracovane.get(g).set(i, true);
+        if (g == 1) poradie.add(i);
+        for (int j = 0; j<graf.get(g).get(i).size(); j++){
+            dfs(other, graf.get(g).get(i).get(j), (g+1)%2, node);
         }
     }
 
-    private void dfs2(EvolutionTree.EvolutionNode node, int i, EvolutionTree.EvolutionNode other){
-        if (i == node.chromosomes.size()) return;
-        if (spracovane2.get(i)) return;
-        spracovane2.set(i, true);
-        poradie.add(i);
-        for (int j = 0; j<graf2.get(i).size(); j++){
-            dfs1(other, graf2.get(i).get(j), node);
-        }
-    }
+//    private void dfs2(EvolutionTree.EvolutionNode node, int i, EvolutionTree.EvolutionNode other){
+//        if (i == node.chromosomes.size()) return;
+//        if (spracovane2.get(i)) return;
+//        spracovane2.set(i, true);
+//        poradie.add(i);
+//        for (int j = 0; j<graf2.get(i).size(); j++){
+//            dfs1(other, graf2.get(i).get(j), node);
+//        }
+//    }
 
     private void optimalizuj(EvolutionTree.EvolutionNode node){
         EvolutionTree.EvolutionNode next = node.getFirst();
-        if (next != null) {
-            vytvor_graf(node, next);
-            relat_poradie(node, next);
-            strom.zmenPoradieChromozomov(next, poradie);
-            optimalizuj(next);
-        }
+        optimalize(node, next);
         next = node.getSecond();
+        optimalize(node, next);
+    }
+
+    private void optimalize(EvolutionTree.EvolutionNode node, EvolutionTree.EvolutionNode next) {
         if (next != null) {
             vytvor_graf(node, next);
             relat_poradie(node, next);
