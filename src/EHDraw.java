@@ -147,7 +147,7 @@ public class EHDraw extends Application {
         MenuItem geneSettingsItem = new MenuItem("Gene Settings");
         MenuItem importSettingsItem = new MenuItem("Import Settings");
         MenuItem exportSettingsItem = new MenuItem("Export Settings");
-        Menu minimizeSubmenu = new Menu ("Minimize Algorithm");
+        Menu minimizeSubmenu = new Menu("Minimize Algorithm");
         settingsMenu.getItems().addAll(redrawCheckItem, generalSettingsItem, geneSettingsItem,
                 importSettingsItem, exportSettingsItem, minimizeSubmenu);
 
@@ -186,10 +186,10 @@ public class EHDraw extends Application {
         tgroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
             @Override
             public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
-                if (newValue == barycenter){
+                if (newValue == barycenter) {
                     Settings.minimization_strategy = new BarycenterMinimizationStrategy();
                 }
-                if (newValue == relatOrder){
+                if (newValue == relatOrder) {
                     Settings.minimization_strategy = new RelativeOrderMinimizationStrategy();
                 }
             }
@@ -406,7 +406,7 @@ public class EHDraw extends Application {
             public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
                 drawfact.clear();
                 Settings.selectable_genes = click.isSelected();
-                if (click.isSelected()){
+                if (click.isSelected()) {
                     drawfact = new FXSelectableDrawFactory(group, geneSettingsStage, pickGene);
                 } else {
                     drawfact = new FXDrawFactory(gc);
@@ -416,7 +416,6 @@ public class EHDraw extends Application {
         });
         paneGene.add(pickGene, 0, 0);
         paneGene.add(click, 1, 0);
-
 
 
         Label drawL = new Label("Draw");
@@ -863,19 +862,8 @@ public class EHDraw extends Application {
 
     private static void draw() {
         if (!strom.isEmpty()) {
-            //DrawFactory drawF = new FXSelectableDrawFactory(group, geneSettingsStage, pickGene);
             drawfact.clear();
             strom.print(drawfact);
-//            EvolutionTree.EvolutionNode next = strom.getRoot();
-//            while(next != null){
-//                for (int i = 0; i<next.chromosomes.size(); i++){
-//                    System.out.println("chromosome "+i+" genepos: " + next.chromosomes.get(i).genePos);
-//                    //System.out.println(strom.which_chromosome(next, i));
-//                }
-//
-//                next = next.getFirst();
-//                System.out.println();
-//            }
         }
     }
 
