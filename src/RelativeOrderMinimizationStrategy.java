@@ -59,7 +59,7 @@ public class RelativeOrderMinimizationStrategy implements MinimizationStrategy {
             dfs(stableNode, i, 0, unstableNode);
         }
 
-        for (int i = 0; i < unstableNode.chromosomes.size(); i++){
+        for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
             if (!spracovane.get(1).get(i))
                 poradie.add(i);
         }
@@ -79,7 +79,7 @@ public class RelativeOrderMinimizationStrategy implements MinimizationStrategy {
         for (int i = 0; i < stableNode.chromosomes.size(); i++) {
             dfsback(stableNode, i, 1, unstableNode);
         }
-        for (int i = 0; i < unstableNode.chromosomes.size(); i++){
+        for (int i = 0; i < unstableNode.chromosomes.size(); i++) {
             if (!spracovane.get(0).get(i))
                 poradie.add(i);
         }

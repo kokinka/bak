@@ -171,11 +171,12 @@ public class EHDraw extends Application {
             @Override
             public void handle(ActionEvent event) {
                 pickGene.setValue("None");
+                update_specific_panel();
                 geneSettingsStage.showAndWait();
             }
         });
         importSettingsItem.setOnAction(new importSettingsHandler());
-        exportHistoryItem.setOnAction(new exportSettingsHandler());
+        exportSettingsItem.setOnAction(new exportSettingsHandler());
 
         RadioMenuItem barycenter = new RadioMenuItem("Barycenter");
         RadioMenuItem relatOrder = new RadioMenuItem("Relative Order");
@@ -612,7 +613,7 @@ public class EHDraw extends Application {
         });
     }
 
-    private static void update_specific_panel() {
+    static void update_specific_panel() {
         dettach_listeners();
         if (pickGene.getValue() == "None") {
             removeMeta.setDisable(true);
@@ -928,10 +929,11 @@ public class EHDraw extends Application {
             FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("SVG files (*.svg)", "*.svg");
             fileChooser1.getExtensionFilters().add(extFilter);
             File file = fileChooser1.showSaveDialog(primaryStage);
-
-            DrawFactory drawF = new SVGDrawFactory();
-            strom.print(drawF);
-            drawF.export(file);
+            if (file != null) {
+                DrawFactory drawF = new SVGDrawFactory();
+                strom.print(drawF);
+                drawF.export(file);
+            }
         }
     }
 
@@ -978,13 +980,15 @@ public class EHDraw extends Application {
             FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("xml files (*.xml)", "*.xml");
             fileChooser1.getExtensionFilters().add(extFilter);
             File file = fileChooser1.showSaveDialog(primaryStage);
-            file.delete();
-            try {
-                file.createNewFile();
-            } catch (IOException ex) {
-                Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
+            if (file != null) {
+                file.delete();
+                try {
+                    file.createNewFile();
+                } catch (IOException ex) {
+                    Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                Settings.exportXML(file);
             }
-            Settings.exportXML(file);
 
         }
     }
@@ -1016,20 +1020,22 @@ public class EHDraw extends Application {
                 FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("ILP files (*.lp)", "*.lp");
                 fileChooser1.getExtensionFilters().add(extFilter);
                 File file = fileChooser1.showSaveDialog(primaryStage);
-                file.delete();
-                file.createNewFile();
-                FileWriter fw = null;
-                try {
-                    fw = new FileWriter(file);
-                } catch (IOException ex) {
-                    Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                BufferedWriter bw = new BufferedWriter(fw);
-                try {
-                    strom.exportILP(bw);
-                    fw.close();
-                } catch (IOException ex) {
-                    Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
+                if (file != null) {
+                    file.delete();
+                    file.createNewFile();
+                    FileWriter fw = null;
+                    try {
+                        fw = new FileWriter(file);
+                    } catch (IOException ex) {
+                        Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    BufferedWriter bw = new BufferedWriter(fw);
+                    try {
+                        strom.exportILP(bw);
+                        fw.close();
+                    } catch (IOException ex) {
+                        Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             } catch (IOException ex) {
                 Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
@@ -1087,12 +1093,14 @@ public class EHDraw extends Application {
                 FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("HISTORY files (*.history)", "*.history");
                 fileChooser.getExtensionFilters().add(extFilter);
                 File file = fileChooser.showSaveDialog(primaryStage);
-                file.delete();
-                file.createNewFile();
-                FileWriter fw = new FileWriter(file);
-                BufferedWriter bw = new BufferedWriter(fw);
-                strom.exportCrossings(bw);
-                fw.close();
+                if (file != null) {
+                    file.delete();
+                    file.createNewFile();
+                    FileWriter fw = new FileWriter(file);
+                    BufferedWriter bw = new BufferedWriter(fw);
+                    strom.exportCrossings(bw);
+                    fw.close();
+                }
             } catch (IOException ex) {
                 Logger.getLogger(EHDraw.class.getName()).log(Level.SEVERE, null, ex);
             }

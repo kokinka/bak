@@ -40,9 +40,9 @@ public class FXSelectableDrawFactory extends DrawFactory {
             line.setStroke(paint);
             line.setStrokeWidth(width);
             if (gene < 0) {
-                line.setStrokeDashOffset(5);
+                line.getStrokeDashArray().addAll(5d);
             } else {
-                line.setStrokeDashOffset(0);
+                line.getStrokeDashArray().addAll();
             }
 
             line.addEventFilter(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>() {
@@ -52,6 +52,7 @@ public class FXSelectableDrawFactory extends DrawFactory {
                         return;
 
                     pickgene.setValue(gene);
+                    EHDraw.update_specific_panel();
                     geneSettings.showAndWait();
 
                     event.consume();
